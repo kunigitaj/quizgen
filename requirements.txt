@@ -1,0 +1,5 @@
+openai>=1.40.0
+pydantic>=2.7.0
+tenacity>=8.2.3
+tiktoken>=0.7.0
+python-dotenv

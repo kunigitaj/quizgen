@@ -1,0 +1,269 @@
+# main.py
+
+import json
+from pathlib import Path
+
+from chunking import read_text, char_chunks, chunk_preview
+from topic_map import save_topicmap_batch_input
+from build_batch import build_questions_requests_balanced, write_jsonl
+from run_batch import submit_batch, wait_for_batch, download_output_or_error
+from assemble import parse_batch_output, extract_questions, validate_and_fix, write_final
+from taxonomy import build_taxonomy, write_taxonomy
+from config import (
+    MAX_CHARS, OVERLAP,
+    BATCH_QUESTIONS_SHARD_SIZE,
+    BATCH_QUESTIONS_MAX_BYTES,
+)
+
+DATA = Path("data")
+DATA.mkdir(exist_ok=True)
+
+SOURCE = DATA / "source.txt"
+TOPIC_IN = DATA / "topicmap_input.jsonl"
+TOPIC_OUT = DATA / "topicmap_output.jsonl"
+Q_IN = DATA / "questions_input.jsonl"           # (combined plan file, not used after sharding)
+Q_OUT = DATA / "questions_output.jsonl"         # combined outputs across shards
+FINAL = DATA / "questions_final.json"
+TAXONOMY = DATA / "taxonomy.json"
+
+
+def _print_file_head(path: Path, lines: int = 60):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            print("----- Begin file preview -----")
+            for i, line in enumerate(f):
+                if i >= lines:
+                    print("... (truncated)")
+                    break
+                print(line.rstrip())
+            print("----- End file preview -----")
+    except Exception as e:
+        print(f"Could not preview file {path}: {e}")
+
+
+def _inspect_output_jsonl(path: Path):
+    if not path.exists():
+        print(f"[inspect] File not found: {path}")
+        return
+    print(f"[inspect] Inspecting JSONL: {path} (size={path.stat().st_size} bytes)")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f, start=1):
+                try:
+                    obj = json.loads(line)
+                except Exception as e:
+                    print(f"[inspect] Line #{i} JSON error: {e}")
+                    print(f"[inspect] Line #{i} preview: {line[:200]}...")
+                    continue
+
+                rid = obj.get("id") or obj.get("custom_id")
+                resp = obj.get("response", {}) or {}
+                status_code = resp.get("status_code") or resp.get("status")
+                has_output_text = bool(resp.get("output_text")) if isinstance(resp, dict) else False
+                has_output_list = isinstance(resp.get("output"), list) if isinstance(resp, dict) else False
+                err = obj.get("error")
+
+                body = resp.get("body", {}) if isinstance(resp, dict) else {}
+                body_output = body.get("output", []) if isinstance(body, dict) else []
+                kinds = []
+                if isinstance(body_output, list):
+                    for it in body_output:
+                        if isinstance(it, dict):
+                            kinds.append(it.get("type"))
+                        else:
+                            kinds.append(type(it).__name__)
+
+                print(
+                    f"[inspect] Line #{i}: id={rid}, status_code={status_code}, "
+                    f"has_output_text={has_output_text}, has_output_list={has_output_list}, "
+                    f"error_present={bool(err)}, body.output.types={kinds}"
+                )
+    except Exception as e:
+        print(f"[inspect] Failed to inspect {path}: {e}")
+
+
+def _audit_topicmap_coverage(topic_map: dict, total_chunks: int):
+    """Return (missing_indices, overlap_indices)."""
+    seen_counts = {}
+    for unit in topic_map.get("units", []):
+        for t in unit.get("topics", []):
+            s, e = t["chunk_span"]
+            for i in range(s, e + 1):
+                seen_counts[i] = seen_counts.get(i, 0) + 1
+    missing = [i for i in range(total_chunks) if i not in seen_counts]
+    overlaps = [i for i, c in seen_counts.items() if c > 1]
+    return missing, overlaps
+
+
+# -------- Optional guardrail: ensure each shard has unique custom_ids --------
+def _assert_unique_custom_ids(batch_requests: list):
+    seen = {}
+    for i, r in enumerate(batch_requests, start=1):
+        cid = r.get("custom_id")
+        if not cid:
+            raise ValueError(f"Request #{i} missing custom_id")
+        if cid in seen:
+            raise ValueError(f"Duplicate custom_id '{cid}' between requests #{seen[cid]} and #{i}")
+        seen[cid] = i
+# -----------------------------------------------------------------------------
+
+
+def run_topicmap_batch(chunks):
+    preview = chunk_preview(chunks)  # uses first lines per chunk (good for indexing + titles)
+    print(f"[TopicMap] Building request JSONL at {TOPIC_IN} with {len(preview)} preview entries.")
+    save_topicmap_batch_input(preview, TOPIC_IN)
+
+    batch_id = submit_batch(TOPIC_IN)
+    print(f"[TopicMap] Submitted batch id={batch_id}. Waiting for completion...")
+
+    st = wait_for_batch(batch_id, poll_seconds=5)
+    print(f"[TopicMap] Batch status: {st.status}")
+
+    if st.status != "completed":
+        kind, path = download_output_or_error(st, TOPIC_OUT)
+        if kind == "error":
+            print(f"[TopicMap ERROR] Error JSONL saved to {path}")
+            _print_file_head(path, 60)
+            _inspect_output_jsonl(path)
+        raise RuntimeError(f"Topic map batch status: {st.status}")
+
+    kind, path = download_output_or_error(st, TOPIC_OUT)
+    if kind == "error":
+        print(f"[TopicMap ERROR] Error JSONL saved to {path}")
+        _print_file_head(path, 60)
+        _inspect_output_jsonl(path)
+        raise RuntimeError("Topic map batch returned errors (no output).")
+
+    print(f"[TopicMap] Output JSONL saved to {path}")
+    _inspect_output_jsonl(path)
+    print("[TopicMap] Raw output head:")
+    _print_file_head(path, 40)
+
+    payloads = parse_batch_output(TOPIC_OUT)
+    if not payloads:
+        print("[TopicMap] No parsed payloads from output JSONL.")
+        print("[TopicMap] Showing raw file again for diagnosis:")
+        _print_file_head(TOPIC_OUT.with_suffix(".errors.jsonl"), 80)
+        raise RuntimeError("No topic map output parsed.")
+
+    topic_map = payloads[0]
+    if not isinstance(topic_map, dict) or "units" not in topic_map:
+        print("[TopicMap] Parsed payload lacks 'units'. Full parsed object follows:")
+        print(json.dumps(topic_map, ensure_ascii=False)[:1200] + ("..." if len(json.dumps(topic_map)) > 1200 else ""))
+        raise RuntimeError("Topic map payload is not a valid object with 'units'.")
+
+    # Enforce hard coverage constraint
+    missing, overlaps = _audit_topicmap_coverage(topic_map, total_chunks=len(chunks))
+    if missing or overlaps:
+        print(f"[TopicMap] Coverage violation: missing={missing} overlaps={overlaps}")
+        raise RuntimeError("Topic map violates coverage constraints (no gaps/no overlaps).")
+
+    print("[TopicMap] Parsed topic map successfully.")
+    return topic_map
+
+
+def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> list[list]:
+    if max_per_shard <= 0:
+        return [requests]
+    shards = []
+    cur, cur_bytes = [], 0
+    for req in requests:
+        s = (json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8")
+        if (len(cur) >= max_per_shard) or (max_bytes and cur_bytes + len(s) > max_bytes):
+            shards.append(cur)
+            cur, cur_bytes = [], 0
+        cur.append(req)
+        cur_bytes += len(s)
+    if cur:
+        shards.append(cur)
+    return shards
+
+
+def run_questions_batch(topic_map, chunks):
+    # Plan all requests (not written as a single giant JSONL anymore)
+    reqs = build_questions_requests_balanced(topic_map, chunks)
+    print(f"[Questions] Planned {len(reqs)} requests")
+
+    shards = _shard_requests(reqs, BATCH_QUESTIONS_SHARD_SIZE, BATCH_QUESTIONS_MAX_BYTES)
+    print(f"[Questions] Submitting in {len(shards)} shard(s) "
+          f"(max_per_shard={BATCH_QUESTIONS_SHARD_SIZE}, byte_cap={BATCH_QUESTIONS_MAX_BYTES})")
+
+    # Clean/prepare combined output file
+    if Q_OUT.exists():
+        Q_OUT.unlink()
+    Q_OUT.touch()
+
+    for si, shard in enumerate(shards, start=1):
+        shard_in = DATA / f"questions_input.shard{si:02d}.jsonl"
+        shard_out = DATA / f"questions_output.shard{si:02d}.jsonl"
+
+        # Optional guardrail: assert unique IDs inside this shard before we submit it
+        _assert_unique_custom_ids(shard)
+
+        print(f"[Questions][Shard {si}/{len(shards)}] Writing {len(shard)} requests → {shard_in}")
+        with shard_in.open("w", encoding="utf-8") as f:
+            for line in shard:
+                f.write(json.dumps(line, ensure_ascii=False) + "\n")
+
+        batch_id = submit_batch(shard_in)
+        print(f"[Questions][Shard {si}] Submitted batch id={batch_id}. Waiting for completion...")
+        st = wait_for_batch(batch_id, poll_seconds=5)
+        print(f"[Questions][Shard {si}] Batch status: {st.status}")
+
+        if st.status != "completed":
+            try:
+                kind, path = download_output_or_error(st, shard_out)
+                if kind == "error":
+                    print(f"[Questions ERROR][Shard {si}] Error JSONL saved to {path}")
+                    _print_file_head(path, 60)
+                    _inspect_output_jsonl(path)
+            except Exception as e:
+                print(f"[Questions][Shard {si}] Failed without output/error file: {e}")
+            raise RuntimeError(f"Questions batch shard {si} status: {st.status}")
+
+        kind, path = download_output_or_error(st, shard_out)
+        if kind == "error":
+            print(f"[Questions ERROR][Shard {si}] Error JSONL saved to {path}")
+            _print_file_head(path, 60)
+            _inspect_output_jsonl(path)
+            raise RuntimeError(f"Questions batch shard {si} returned errors (no output).")
+
+        print(f"[Questions][Shard {si}] Output JSONL saved to {path}")
+        _inspect_output_jsonl(path)
+
+        # Append shard outputs to combined Q_OUT
+        with Q_OUT.open("a", encoding="utf-8") as outf, shard_out.open("r", encoding="utf-8") as inf:
+            for line in inf:
+                outf.write(line)
+
+    print(f"[Questions] All shards completed. Combined output → {Q_OUT}")
+
+    # Parse + validate
+    payloads = parse_batch_output(Q_OUT)
+    if not payloads:
+        print("[Questions] No parsed payloads from combined output JSONL.")
+        raise RuntimeError("No questions output parsed.")
+
+    items = extract_questions(payloads)
+    fixed = validate_and_fix(items)
+    write_final(fixed, FINAL)
+    print(f"[Questions] Final questions: {len(fixed)} → {FINAL}")
+
+    # Build taxonomy.json using topic_map + generated questions
+    tax = build_taxonomy(topic_map, fixed)
+    write_taxonomy(tax, TAXONOMY)
+    print(f"[Taxonomy] Wrote taxonomy → {TAXONOMY}")
+
+
+if __name__ == "__main__":
+    print(f"[Main] Using source: {SOURCE}")
+    if not SOURCE.exists():
+        raise SystemExit(f"[Main] Missing source file: {SOURCE}. Put your 3,000-line text at this path.")
+
+    text = read_text(SOURCE)
+    print(f"[Main] Loaded source text ({len(text)} chars). Chunking...")
+    chunks = char_chunks(text, MAX_CHARS, OVERLAP)
+    print(f"[Main] Created {len(chunks)} chunk(s) (MAX_CHARS={MAX_CHARS}, OVERLAP={OVERLAP}).")
+
+    topic_map = run_topicmap_batch(chunks)
+    run_questions_batch(topic_map, chunks)
