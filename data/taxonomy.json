@@ -1,0 +1,4229 @@
+{
+  "version": "2025-08-25",
+  "units": [
+    {
+      "id": "u1",
+      "label": "SAP AI Core, Launchpad, and Model Operations",
+      "description": "Includes topics: Overview and Objectives, AI Core Capabilities and AI API, AI Launchpad Lifecycle and Monitoring, Resource Groups Management, Configurations and Training Templates, Model Deployment and Serving..."
+    },
+    {
+      "id": "u2",
+      "label": "LLM Fundamentals, Ethics, and SAP Business AI",
+      "description": "Includes topics: LLM Pros/Cons and SAP AI Ethics, Generative AI Hub and Business AI, Ideation and Validation Phases, Integrating LLMs into Apps, LLM Use Cases and Challenges, Chain-of-Thought Illustration..."
+    },
+    {
+      "id": "u3",
+      "label": "Agents, Tools, Evaluation, and Security",
+      "description": "Includes topics: Agents, Functions, and Tool Use, Core Evaluation Metrics, Data, KPIs, and Monitoring, Securing LLM Applications"
+    },
+    {
+      "id": "u4",
+      "label": "Generative AI Hub Concepts and Setup",
+      "description": "Includes topics: AI Foundation and GenAI Hub Need, Orchestration, Governance, Adaptability, BTP and AI Core Provisioning, Beyond Chatbots: Software-to-Software, Business Problem Context"
+    },
+    {
+      "id": "u5",
+      "label": "Prompting Basics and JSON Extraction",
+      "description": "Includes topics: Email Prompt for Urgency/Sentiment, Strict JSON Output Requirements, Adding Business Categories"
+    },
+    {
+      "id": "u6",
+      "label": "Generative AI Hub SDK and Orchestration",
+      "description": "Includes topics: SDK Install and Use, Need for Orchestration, Using Orchestration Service, Minimal Orchestration Code, Deployment Handling and Troubleshooting"
+    },
+    {
+      "id": "u7",
+      "label": "End-to-End Prompting Workflow and Evaluation",
+      "description": "Includes topics: Prompt Function Binding, JSON Generation via SDK, Category Extraction Prompt, Evaluation Functions with SDK, Dataset-Scale Evaluation"
+    },
+    {
+      "id": "u8",
+      "label": "Advanced Prompt Engineering",
+      "description": "Includes topics: One/Few-Shot and Metaprompting, Few-Shot Construction and Evaluation, Guide Template Prompt, Applying Guides in Prompts, Combining Few-Shot and Guides"
+    },
+    {
+      "id": "u9",
+      "label": "Model Selection, Deployment, and Evaluation",
+      "description": "Includes topics: Why Use Multiple Models, Launchpad Configurations and Deployments, Evaluating Models via SDK, Model Results Examples, Evaluation and Recap"
+    },
+    {
+      "id": "u10",
+      "label": "Exploring Models and Advanced Techniques Overview",
+      "description": "Includes topics: Recap and Bridge to Grounding, Model Library Exploration"
+    },
+    {
+      "id": "u11",
+      "label": "Business Scenarios and Value of GenAI Hub",
+      "description": "Includes topics: Cross-Industry Scenario Examples, Hub Value, Orchestration, Low Code, Facility Solutions Scenario Definition, Challenges: Grounding, Embeddings, Ethics"
+    },
+    {
+      "id": "u12",
+      "label": "Orchestration Service Deep Dive",
+      "description": "Includes topics: Modules and Workflow Enhancement, Harmonized API and Development Flow, Orchestration Workflow JSON, SDK Updates and References, Current Limitations and Conclusion"
+    },
+    {
+      "id": "u13",
+      "label": "Document Grounding with SAP HANA Vector Engine",
+      "description": "Includes topics: HANA Vector Engine Basics, Grounding Architecture Components, Grounding in AI Launchpad, Grounding Module Options, Grounded Orchestration Example, Grounding Summary and Outcomes"
+    }
+  ],
+  "topics": [
+    {
+      "id": "u1_t1_intro-ai-core-launchpad",
+      "label": "Overview and Objectives",
+      "description": "Introduces learning goals for using SAP AI Core and Launchpad, including connections to Docker and GitHub."
+    },
+    {
+      "id": "u1_t2-ai-core-capabilities",
+      "label": "AI Core Capabilities and AI API",
+      "description": "Describes managed AI lifecycle, multi-tenancy, scalability, SDK, and standardized AI API."
+    },
+    {
+      "id": "u1_t3-launchpad-lifecycle",
+      "label": "AI Launchpad Lifecycle and Monitoring",
+      "description": "Explains uniform training/deployment, resource groups, and transparency in model ops."
+    },
+    {
+      "id": "u1_t4-resource-groups",
+      "label": "Resource Groups Management",
+      "description": "Defines resource groups as isolated workspaces and links to management guidance."
+    },
+    {
+      "id": "u1_t5-configurations-training",
+      "label": "Configurations and Training Templates",
+      "description": "Covers scenarios, executables, datasets, and creating training configurations."
+    },
+    {
+      "id": "u1_t6-deployment-serving",
+      "label": "Model Deployment and Serving",
+      "description": "Details deploying trained models, inference, Kubernetes scaling on CPU/GPU, and request load."
+    },
+    {
+      "id": "u1_t7-tutorial-pointer",
+      "label": "Hands-on Tutorial Pointer",
+      "description": "Provides link-out to a house price predictor tutorial and transitions to LLM fundamentals."
+    },
+    {
+      "id": "u2_t1-llm-pros-cons-ethics",
+      "label": "LLM Pros/Cons and SAP AI Ethics",
+      "description": "Outlines scalability, complexity, dependencies, and SAP’s AI ethics and security posture."
+    },
+    {
+      "id": "u2_t2-genai-hub-overview",
+      "label": "Generative AI Hub and Business AI",
+      "description": "Positions generative AI hub access, SAP Business AI approach, and ideation-to-productization."
+    },
+    {
+      "id": "u2_t3-productization-phases",
+      "label": "Ideation and Validation Phases",
+      "description": "Covers strategy access, customer collaboration, feasibility, and compliance considerations."
+    },
+    {
+      "id": "u2_t4-integration-steps",
+      "label": "Integrating LLMs into Apps",
+      "description": "Lists high-level steps for integrating LLMs following SAP’s approach."
+    },
+    {
+      "id": "u2_t5-llm-use-cases",
+      "label": "LLM Use Cases and Challenges",
+      "description": "Introduces why LLMs may underperform and sets context for optimization strategies."
+    },
+    {
+      "id": "u2_t6-cot-example",
+      "label": "Chain-of-Thought Illustration",
+      "description": "Demonstrates stepwise prompting via plant growth example for better reasoning."
+    },
+    {
+      "id": "u2_t7-rag-hana-vector",
+      "label": "RAG and SAP HANA Vector Engine",
+      "description": "Explains RAG architecture and HANA vector engine for embeddings and parallel processing."
+    },
+    {
+      "id": "u2_t8-fine-tuning-intro",
+      "label": "Introducing Fine-Tuning",
+      "description": "Motivates when to fine-tune LLMs to improve domain performance."
+    },
+    {
+      "id": "u3_t1-agents-tools",
+      "label": "Agents, Functions, and Tool Use",
+      "description": "Shows agent-function-tool interaction via a marketing report scenario."
+    },
+    {
+      "id": "u3_t2-eval-metrics",
+      "label": "Core Evaluation Metrics",
+      "description": "Summarizes ROUGE, accuracy, precision/recall, and F1 for LLM outputs."
+    },
+    {
+      "id": "u3_t3-prod-readiness",
+      "label": "Data, KPIs, and Monitoring",
+      "description": "Guides on domain data, incremental updates, real workloads, KPIs, and error logging."
+    },
+    {
+      "id": "u3_t4-security",
+      "label": "Securing LLM Applications",
+      "description": "Emphasizes safety against hallucinations, jailbreaks, leakage, and ongoing monitoring."
+    },
+    {
+      "id": "u4_t1-foundation-overview",
+      "label": "AI Foundation and GenAI Hub Need",
+      "description": "Explains AI Foundation and rationale for a consolidated generative AI hub."
+    },
+    {
+      "id": "u4_t2-orchestration-governance",
+      "label": "Orchestration, Governance, Adaptability",
+      "description": "Defines AI orchestration, governance needs, and model/data adaptability."
+    },
+    {
+      "id": "u4_t3-btp-setup",
+      "label": "BTP and AI Core Provisioning",
+      "description": "Covers global account setup and provisioning SAP AI Core with service keys."
+    },
+    {
+      "id": "u4_t4-beyond-chatbots",
+      "label": "Beyond Chatbots: Software-to-Software",
+      "description": "Describes non-human-in-the-loop and control-system use of LLMs."
+    },
+    {
+      "id": "u4_t5-business-case-setup",
+      "label": "Business Problem Context",
+      "description": "Introduces a product content generation case and segues to prompting."
+    },
+    {
+      "id": "u5_t1-basic-email-prompt",
+      "label": "Email Prompt for Urgency/Sentiment",
+      "description": "Presents an HVAC email and instructions to extract urgency and sentiment."
+    },
+    {
+      "id": "u5_t2-json-cleanliness",
+      "label": "Strict JSON Output Requirements",
+      "description": "Enforces compact, key-limited JSON and shows tool UI result."
+    },
+    {
+      "id": "u5_t3-business-categories",
+      "label": "Adding Business Categories",
+      "description": "Extends prompts to categorize messages aligned with company schemas."
+    },
+    {
+      "id": "u6_t1-sdk-install",
+      "label": "SDK Install and Use",
+      "description": "Notes prerequisites and pip install, then native OpenAI-style usage."
+    },
+    {
+      "id": "u6_t2-orchestration-need",
+      "label": "Need for Orchestration",
+      "description": "Motivates harmonized access across models to reduce redundancy."
+    },
+    {
+      "id": "u6_t3-orchestration-steps",
+      "label": "Using Orchestration Service",
+      "description": "Lists steps to auth, create deployment, and consume orchestration."
+    },
+    {
+      "id": "u6_t4-orchestration-code",
+      "label": "Minimal Orchestration Code",
+      "description": "Shows code to run a simple orchestration template and read response."
+    },
+    {
+      "id": "u6_t5-advanced-calls",
+      "label": "Deployment Handling and Troubleshooting",
+      "description": "Mentions retrieving/creating deployments and troubleshooting tips."
+    },
+    {
+      "id": "u7_t1-function-binding",
+      "label": "Prompt Function Binding",
+      "description": "Introduces templated prompts and partial application to send requests."
+    },
+    {
+      "id": "u7_t2-json-gen",
+      "label": "JSON Generation via SDK",
+      "description": "Shows generating urgency/sentiment JSON aligned to predefined values."
+    },
+    {
+      "id": "u7_t3-category-code",
+      "label": "Category Extraction Prompt",
+      "description": "Builds a prompt and code to extract support categories as JSON."
+    },
+    {
+      "id": "u7_t4-eval-functions",
+      "label": "Evaluation Functions with SDK",
+      "description": "Explains automated evaluation against ground truth for robustness."
+    },
+    {
+      "id": "u7_t5-batch-eval",
+      "label": "Dataset-Scale Evaluation",
+      "description": "Demonstrates evaluating full datasets and pretty-printing results."
+    },
+    {
+      "id": "u8_t1-few-shot-and-meta",
+      "label": "One/Few-Shot and Metaprompting",
+      "description": "Covers example-driven prompting and generating guides via metaprompting."
+    },
+    {
+      "id": "u8_t2-few-shot-eval",
+      "label": "Few-Shot Construction and Evaluation",
+      "description": "Builds sampled examples, templates, and evaluates few-shot prompts."
+    },
+    {
+      "id": "u8_t3-guide-generation",
+      "label": "Guide Template Prompt",
+      "description": "Creates a guide template to distinguish categories or options."
+    },
+    {
+      "id": "u8_t4-apply-guides",
+      "label": "Applying Guides in Prompts",
+      "description": "Uses generated urgency guides to improve classification prompts."
+    },
+    {
+      "id": "u8_t5-guided-few-shot",
+      "label": "Combining Few-Shot and Guides",
+      "description": "Combines examples with guides to produce structured JSON outputs."
+    },
+    {
+      "id": "u9_t1-why-multi-model",
+      "label": "Why Use Multiple Models",
+      "description": "Discusses specialization, performance, and complementary strengths."
+    },
+    {
+      "id": "u9_t2-launchpad-config-deploy",
+      "label": "Launchpad Configurations and Deployments",
+      "description": "Shows configuring/deploying models and using orchestration with common code."
+    },
+    {
+      "id": "u9_t3-model-eval-setup",
+      "label": "Evaluating Models via SDK",
+      "description": "Introduces evaluating different models for the facility scenario."
+    },
+    {
+      "id": "u9_t4-model-results",
+      "label": "Model Results Examples",
+      "description": "References evaluation outputs and running fast, cost-effective models."
+    },
+    {
+      "id": "u9_t5-eval-summary",
+      "label": "Evaluation and Recap",
+      "description": "Summarizes prompt creation, SDK, orchestration, and model choice tradeoffs."
+    },
+    {
+      "id": "u10_t1-recap-to-grounding",
+      "label": "Recap and Bridge to Grounding",
+      "description": "Reinforces evaluation, advanced prompting, and model selection, teeing up grounding."
+    },
+    {
+      "id": "u10_t2-model-library",
+      "label": "Model Library Exploration",
+      "description": "Describes catalog mode, filters, and model metadata for selection."
+    },
+    {
+      "id": "u11_t1-scenarios-by-domain",
+      "label": "Cross-Industry Scenario Examples",
+      "description": "Enumerates benefits in customer service, finance, and logistics."
+    },
+    {
+      "id": "u11_t2-hub-value-prop",
+      "label": "Hub Value, Orchestration, Low Code",
+      "description": "Highlights orchestration, low-code, and grounding packaging benefits."
+    },
+    {
+      "id": "u11_t3-facility-scenario",
+      "label": "Facility Solutions Scenario Definition",
+      "description": "Defines target markets and services for the facility management case."
+    },
+    {
+      "id": "u11_t4-challenges-needs",
+      "label": "Challenges: Grounding, Embeddings, Ethics",
+      "description": "Frames needs for grounding, vector search, masking, and compliant workflows."
+    },
+    {
+      "id": "u12_t1-orchestration-modules",
+      "label": "Modules and Workflow Enhancement",
+      "description": "Explains orchestration backbone, integration, privacy, and efficiency."
+    },
+    {
+      "id": "u12_t2-harmonized-api",
+      "label": "Harmonized API and Development Flow",
+      "description": "Covers simplified development and upcoming features roadmap."
+    },
+    {
+      "id": "u12_t3-workflow-json",
+      "label": "Orchestration Workflow JSON",
+      "description": "Shows upload/download of JSON workflows and provides an example."
+    },
+    {
+      "id": "u12_t4-sdk-release-notes",
+      "label": "SDK Updates and References",
+      "description": "Lists SDK install extras, new features, and reference links."
+    },
+    {
+      "id": "u12_t5-limitations",
+      "label": "Current Limitations and Conclusion",
+      "description": "Notes function calling gaps and partial OSS framework support; best practices."
+    },
+    {
+      "id": "u13_t1-hana-vector-engine",
+      "label": "HANA Vector Engine Basics",
+      "description": "Describes storing embeddings and vector SQL functions for semantic tasks."
+    },
+    {
+      "id": "u13_t2-grounding-architecture",
+      "label": "Grounding Architecture Components",
+      "description": "Outlines document store, ingestion, embeddings, and orchestration stages."
+    },
+    {
+      "id": "u13_t3-grounding-features",
+      "label": "Grounding in AI Launchpad",
+      "description": "Explains model access, indexing, and improved context via document grounding."
+    },
+    {
+      "id": "u13_t4-grounding-options",
+      "label": "Grounding Module Options",
+      "description": "Details Option 1 pipeline steps and initial administrative setup."
+    },
+    {
+      "id": "u13_t5-grounded-orchestration-code",
+      "label": "Grounded Orchestration Example",
+      "description": "Shows orchestration template code and grounded issue listing output."
+    },
+    {
+      "id": "u13_t6-grounding-summary",
+      "label": "Grounding Summary and Outcomes",
+      "description": "Summarizes embeddings, abstraction across LLMs, and business impact."
+    }
+  ],
+  "tags": [
+    {
+      "id": "overview",
+      "label": "overview",
+      "aliases": ["overview", "Overview"],
+      "description": ""
+    },
+    {
+      "id": "capabilities",
+      "label": "capabilities",
+      "aliases": ["capabilities", "Capabilities"],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_core",
+      "label": "sap-ai-core",
+      "aliases": ["sap-ai-core", "Sap-Ai-Core", "sap ai core"],
+      "description": ""
+    },
+    {
+      "id": "ai_core",
+      "label": "ai-core",
+      "aliases": ["ai-core", "Ai-Core", "ai core"],
+      "description": ""
+    },
+    {
+      "id": "launchpad",
+      "label": "launchpad",
+      "aliases": ["launchpad", "Launchpad"],
+      "description": ""
+    },
+    {
+      "id": "multi_tenancy",
+      "label": "multi-tenancy",
+      "aliases": ["multi-tenancy", "Multi-Tenancy", "multi tenancy"],
+      "description": ""
+    },
+    {
+      "id": "scalability",
+      "label": "scalability",
+      "aliases": ["scalability", "Scalability"],
+      "description": ""
+    },
+    {
+      "id": "rest_serving",
+      "label": "rest-serving",
+      "aliases": ["rest-serving", "Rest-Serving", "rest serving"],
+      "description": ""
+    },
+    {
+      "id": "ai_lifecycle",
+      "label": "ai-lifecycle",
+      "aliases": ["ai-lifecycle", "Ai-Lifecycle", "ai lifecycle"],
+      "description": ""
+    },
+    {
+      "id": "transparency",
+      "label": "transparency",
+      "aliases": ["transparency", "Transparency"],
+      "description": ""
+    },
+    {
+      "id": "deployment",
+      "label": "deployment",
+      "aliases": ["deployment", "Deployment"],
+      "description": ""
+    },
+    {
+      "id": "monitoring",
+      "label": "monitoring",
+      "aliases": ["monitoring", "Monitoring"],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_core",
+      "label": "SAP AI Core",
+      "aliases": ["SAP AI Core", "sap ai core", "Sap Ai Core", "sap-ai-core"],
+      "description": ""
+    },
+    {
+      "id": "resource_groups",
+      "label": "resource groups",
+      "aliases": ["resource groups", "Resource Groups", "resource-groups"],
+      "description": ""
+    },
+    {
+      "id": "datasets",
+      "label": "datasets",
+      "aliases": ["datasets", "Datasets"],
+      "description": ""
+    },
+    {
+      "id": "training_configuration",
+      "label": "training-configuration",
+      "aliases": [
+        "training-configuration",
+        "Training-Configuration",
+        "training configuration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "pipelines",
+      "label": "pipelines",
+      "aliases": ["pipelines", "Pipelines"],
+      "description": ""
+    },
+    {
+      "id": "serving",
+      "label": "serving",
+      "aliases": ["serving", "Serving"],
+      "description": ""
+    },
+    {
+      "id": "inference",
+      "label": "inference",
+      "aliases": ["inference", "Inference"],
+      "description": ""
+    },
+    {
+      "id": "tutorial_pointer",
+      "label": "tutorial-pointer",
+      "aliases": ["tutorial-pointer", "Tutorial-Pointer", "tutorial pointer"],
+      "description": ""
+    },
+    {
+      "id": "llm_overview",
+      "label": "llm-overview",
+      "aliases": ["llm-overview", "Llm-Overview", "llm overview"],
+      "description": ""
+    },
+    {
+      "id": "risk",
+      "label": "risk",
+      "aliases": ["risk", "Risk"],
+      "description": ""
+    },
+    {
+      "id": "llm_adoption",
+      "label": "llm-adoption",
+      "aliases": ["llm-adoption", "Llm-Adoption", "llm adoption"],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_ethics",
+      "label": "sap-ai-ethics",
+      "aliases": ["sap-ai-ethics", "Sap-Ai-Ethics", "sap ai ethics"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub",
+      "label": "generative_ai_hub",
+      "aliases": [
+        "generative_ai_hub",
+        "Generative_Ai_Hub",
+        "generative ai hub",
+        "generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "business_ai",
+      "label": "business_ai",
+      "aliases": ["business_ai", "Business_Ai", "business ai", "business-ai"],
+      "description": ""
+    },
+    {
+      "id": "ideation",
+      "label": "ideation",
+      "aliases": ["ideation", "Ideation"],
+      "description": ""
+    },
+    {
+      "id": "validation",
+      "label": "validation",
+      "aliases": ["validation", "Validation"],
+      "description": ""
+    },
+    {
+      "id": "ethics",
+      "label": "ethics",
+      "aliases": ["ethics", "Ethics"],
+      "description": ""
+    },
+    {
+      "id": "pii",
+      "label": "PII",
+      "aliases": ["PII", "pii", "Pii"],
+      "description": ""
+    },
+    {
+      "id": "customer_collaboration",
+      "label": "customer-collaboration",
+      "aliases": [
+        "customer-collaboration",
+        "Customer-Collaboration",
+        "customer collaboration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "integration",
+      "label": "integration",
+      "aliases": ["integration", "Integration"],
+      "description": ""
+    },
+    {
+      "id": "llm",
+      "label": "LLM",
+      "aliases": ["LLM", "llm", "Llm"],
+      "description": ""
+    },
+    {
+      "id": "sap_btp",
+      "label": "SAP BTP",
+      "aliases": ["SAP BTP", "sap btp", "Sap Btp", "sap-btp"],
+      "description": ""
+    },
+    {
+      "id": "langchain",
+      "label": "LangChain",
+      "aliases": ["LangChain", "langchain", "Langchain"],
+      "description": ""
+    },
+    {
+      "id": "llamaindex",
+      "label": "LlamaIndex",
+      "aliases": ["LlamaIndex", "llamaindex", "Llamaindex"],
+      "description": ""
+    },
+    {
+      "id": "llm",
+      "label": "llm",
+      "aliases": ["llm", "Llm"],
+      "description": ""
+    },
+    {
+      "id": "prompt_engineering",
+      "label": "prompt_engineering",
+      "aliases": [
+        "prompt_engineering",
+        "Prompt_Engineering",
+        "prompt engineering",
+        "prompt-engineering"
+      ],
+      "description": ""
+    },
+    {
+      "id": "use_cases",
+      "label": "use_cases",
+      "aliases": ["use_cases", "Use_Cases", "use cases", "use-cases"],
+      "description": ""
+    },
+    {
+      "id": "reasoning",
+      "label": "reasoning",
+      "aliases": ["reasoning", "Reasoning"],
+      "description": ""
+    },
+    {
+      "id": "prompting",
+      "label": "prompting",
+      "aliases": ["prompting", "Prompting"],
+      "description": ""
+    },
+    {
+      "id": "cot",
+      "label": "cot",
+      "aliases": ["cot", "Cot"],
+      "description": ""
+    },
+    {
+      "id": "rag",
+      "label": "RAG",
+      "aliases": ["RAG", "rag", "Rag"],
+      "description": ""
+    },
+    {
+      "id": "sap_hana",
+      "label": "SAP HANA",
+      "aliases": ["SAP HANA", "sap hana", "Sap Hana", "sap-hana"],
+      "description": ""
+    },
+    {
+      "id": "vector_embeddings",
+      "label": "vector-embeddings",
+      "aliases": [
+        "vector-embeddings",
+        "Vector-Embeddings",
+        "vector embeddings"
+      ],
+      "description": ""
+    },
+    {
+      "id": "enterprise_ai",
+      "label": "enterprise-AI",
+      "aliases": [
+        "enterprise-AI",
+        "enterprise-ai",
+        "Enterprise-Ai",
+        "enterprise ai"
+      ],
+      "description": ""
+    },
+    {
+      "id": "fine_tuning",
+      "label": "fine-tuning",
+      "aliases": ["fine-tuning", "Fine-Tuning", "fine tuning"],
+      "description": ""
+    },
+    {
+      "id": "llm_optimization",
+      "label": "llm-optimization",
+      "aliases": ["llm-optimization", "Llm-Optimization", "llm optimization"],
+      "description": ""
+    },
+    {
+      "id": "learning_objectives",
+      "label": "learning-objectives",
+      "aliases": [
+        "learning-objectives",
+        "Learning-Objectives",
+        "learning objectives"
+      ],
+      "description": ""
+    },
+    {
+      "id": "agents",
+      "label": "agents",
+      "aliases": ["agents", "Agents"],
+      "description": ""
+    },
+    {
+      "id": "tools",
+      "label": "tools",
+      "aliases": ["tools", "Tools"],
+      "description": ""
+    },
+    {
+      "id": "marketing_report",
+      "label": "marketing-report",
+      "aliases": ["marketing-report", "Marketing-Report", "marketing report"],
+      "description": ""
+    },
+    {
+      "id": "llm_practice",
+      "label": "llm-practice",
+      "aliases": ["llm-practice", "Llm-Practice", "llm practice"],
+      "description": ""
+    },
+    {
+      "id": "evaluation",
+      "label": "evaluation",
+      "aliases": ["evaluation", "Evaluation"],
+      "description": ""
+    },
+    {
+      "id": "metrics",
+      "label": "metrics",
+      "aliases": ["metrics", "Metrics"],
+      "description": ""
+    },
+    {
+      "id": "prod_readiness",
+      "label": "prod-readiness",
+      "aliases": ["prod-readiness", "Prod-Readiness", "prod readiness"],
+      "description": ""
+    },
+    {
+      "id": "rollout",
+      "label": "rollout",
+      "aliases": ["rollout", "Rollout"],
+      "description": ""
+    },
+    {
+      "id": "security",
+      "label": "security",
+      "aliases": ["security", "Security"],
+      "description": ""
+    },
+    {
+      "id": "ai_foundation",
+      "label": "AI Foundation",
+      "aliases": [
+        "AI Foundation",
+        "ai foundation",
+        "Ai Foundation",
+        "ai-foundation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub",
+      "label": "Generative AI Hub",
+      "aliases": [
+        "Generative AI Hub",
+        "generative ai hub",
+        "Generative Ai Hub",
+        "generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "btp",
+      "label": "BTP",
+      "aliases": ["BTP", "btp", "Btp"],
+      "description": ""
+    },
+    {
+      "id": "ai_orchestration",
+      "label": "ai-orchestration",
+      "aliases": ["ai-orchestration", "Ai-Orchestration", "ai orchestration"],
+      "description": ""
+    },
+    {
+      "id": "governance",
+      "label": "governance",
+      "aliases": ["governance", "Governance"],
+      "description": ""
+    },
+    {
+      "id": "adaptability",
+      "label": "adaptability",
+      "aliases": ["adaptability", "Adaptability"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai",
+      "label": "generative-ai",
+      "aliases": ["generative-ai", "Generative-Ai", "generative ai"],
+      "description": ""
+    },
+    {
+      "id": "btp",
+      "label": "btp",
+      "aliases": ["btp", "Btp"],
+      "description": ""
+    },
+    {
+      "id": "provisioning",
+      "label": "provisioning",
+      "aliases": ["provisioning", "Provisioning"],
+      "description": ""
+    },
+    {
+      "id": "service_key",
+      "label": "service-key",
+      "aliases": ["service-key", "Service-Key", "service key"],
+      "description": ""
+    },
+    {
+      "id": "beyond_chatbots",
+      "label": "beyond_chatbots",
+      "aliases": [
+        "beyond_chatbots",
+        "Beyond_Chatbots",
+        "beyond chatbots",
+        "beyond-chatbots"
+      ],
+      "description": ""
+    },
+    {
+      "id": "software_to_software",
+      "label": "software_to_software",
+      "aliases": [
+        "software_to_software",
+        "Software_To_Software",
+        "software to software",
+        "software-to-software"
+      ],
+      "description": ""
+    },
+    {
+      "id": "automation",
+      "label": "automation",
+      "aliases": ["automation", "Automation"],
+      "description": ""
+    },
+    {
+      "id": "email_analysis",
+      "label": "email-analysis",
+      "aliases": ["email-analysis", "Email-Analysis", "email analysis"],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_launchpad",
+      "label": "sap-ai-launchpad",
+      "aliases": ["sap-ai-launchpad", "Sap-Ai-Launchpad", "sap ai launchpad"],
+      "description": ""
+    },
+    {
+      "id": "nlp",
+      "label": "nlp",
+      "aliases": ["nlp", "Nlp"],
+      "description": ""
+    },
+    {
+      "id": "classification",
+      "label": "classification",
+      "aliases": ["classification", "Classification"],
+      "description": ""
+    },
+    {
+      "id": "prompt_engineering",
+      "label": "prompt-engineering",
+      "aliases": [
+        "prompt-engineering",
+        "Prompt-Engineering",
+        "prompt engineering"
+      ],
+      "description": ""
+    },
+    {
+      "id": "json",
+      "label": "json",
+      "aliases": ["json", "Json"],
+      "description": ""
+    },
+    {
+      "id": "formatting",
+      "label": "formatting",
+      "aliases": ["formatting", "Formatting"],
+      "description": ""
+    },
+    {
+      "id": "categorization",
+      "label": "categorization",
+      "aliases": ["categorization", "Categorization"],
+      "description": ""
+    },
+    {
+      "id": "support_tags",
+      "label": "support-tags",
+      "aliases": ["support-tags", "Support-Tags", "support tags"],
+      "description": ""
+    },
+    {
+      "id": "hvac_example",
+      "label": "hvac-example",
+      "aliases": ["hvac-example", "Hvac-Example", "hvac example"],
+      "description": ""
+    },
+    {
+      "id": "sdk",
+      "label": "sdk",
+      "aliases": ["sdk", "Sdk"],
+      "description": ""
+    },
+    {
+      "id": "installation",
+      "label": "installation",
+      "aliases": ["installation", "Installation"],
+      "description": ""
+    },
+    {
+      "id": "pip",
+      "label": "pip",
+      "aliases": ["pip", "Pip"],
+      "description": ""
+    },
+    {
+      "id": "orchestration",
+      "label": "orchestration",
+      "aliases": ["orchestration", "Orchestration"],
+      "description": ""
+    },
+    {
+      "id": "harmonized_api",
+      "label": "harmonized_api",
+      "aliases": [
+        "harmonized_api",
+        "Harmonized_Api",
+        "harmonized api",
+        "harmonized-api"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ai_lifecycle",
+      "label": "ai_lifecycle",
+      "aliases": [
+        "ai_lifecycle",
+        "Ai_Lifecycle",
+        "ai lifecycle",
+        "ai-lifecycle"
+      ],
+      "description": ""
+    },
+    {
+      "id": "workflow",
+      "label": "workflow",
+      "aliases": ["workflow", "Workflow"],
+      "description": ""
+    },
+    {
+      "id": "authentication",
+      "label": "authentication",
+      "aliases": ["authentication", "Authentication"],
+      "description": ""
+    },
+    {
+      "id": "python",
+      "label": "python",
+      "aliases": ["python", "Python"],
+      "description": ""
+    },
+    {
+      "id": "timeouts",
+      "label": "timeouts",
+      "aliases": ["timeouts", "Timeouts"],
+      "description": ""
+    },
+    {
+      "id": "troubleshooting",
+      "label": "troubleshooting",
+      "aliases": ["troubleshooting", "Troubleshooting"],
+      "description": ""
+    },
+    {
+      "id": "function_binding",
+      "label": "function-binding",
+      "aliases": ["function-binding", "Function-Binding", "function binding"],
+      "description": ""
+    },
+    {
+      "id": "partial_application",
+      "label": "partial-application",
+      "aliases": [
+        "partial-application",
+        "Partial-Application",
+        "partial application"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompts",
+      "label": "prompts",
+      "aliases": ["prompts", "Prompts"],
+      "description": ""
+    },
+    {
+      "id": "parsing",
+      "label": "parsing",
+      "aliases": ["parsing", "Parsing"],
+      "description": ""
+    },
+    {
+      "id": "data_exchange",
+      "label": "data-exchange",
+      "aliases": ["data-exchange", "Data-Exchange", "data exchange"],
+      "description": ""
+    },
+    {
+      "id": "category_extraction",
+      "label": "category-extraction",
+      "aliases": [
+        "category-extraction",
+        "Category-Extraction",
+        "category extraction"
+      ],
+      "description": ""
+    },
+    {
+      "id": "json_formatting",
+      "label": "json-formatting",
+      "aliases": ["json-formatting", "Json-Formatting", "json formatting"],
+      "description": ""
+    },
+    {
+      "id": "assessment",
+      "label": "assessment",
+      "aliases": ["assessment", "Assessment"],
+      "description": ""
+    },
+    {
+      "id": "few_shot",
+      "label": "few-shot",
+      "aliases": ["few-shot", "Few-Shot", "few shot"],
+      "description": ""
+    },
+    {
+      "id": "reproducibility",
+      "label": "reproducibility",
+      "aliases": ["reproducibility", "Reproducibility"],
+      "description": ""
+    },
+    {
+      "id": "sampling",
+      "label": "sampling",
+      "aliases": ["sampling", "Sampling"],
+      "description": ""
+    },
+    {
+      "id": "guide_generation",
+      "label": "guide-generation",
+      "aliases": ["guide-generation", "Guide-Generation", "guide generation"],
+      "description": ""
+    },
+    {
+      "id": "guides",
+      "label": "guides",
+      "aliases": ["guides", "Guides"],
+      "description": ""
+    },
+    {
+      "id": "guidance",
+      "label": "guidance",
+      "aliases": ["guidance", "Guidance"],
+      "description": ""
+    },
+    {
+      "id": "structured_output",
+      "label": "structured-output",
+      "aliases": [
+        "structured-output",
+        "Structured-Output",
+        "structured output"
+      ],
+      "description": ""
+    },
+    {
+      "id": "multi_model",
+      "label": "multi-model",
+      "aliases": ["multi-model", "Multi-Model", "multi model"],
+      "description": ""
+    },
+    {
+      "id": "specialization",
+      "label": "specialization",
+      "aliases": ["specialization", "Specialization"],
+      "description": ""
+    },
+    {
+      "id": "roi",
+      "label": "roi",
+      "aliases": ["roi", "Roi"],
+      "description": ""
+    },
+    {
+      "id": "configuration",
+      "label": "configuration",
+      "aliases": ["configuration", "Configuration"],
+      "description": ""
+    },
+    {
+      "id": "llm_comparison",
+      "label": "llm-comparison",
+      "aliases": ["llm-comparison", "Llm-Comparison", "llm comparison"],
+      "description": ""
+    },
+    {
+      "id": "model_selection",
+      "label": "model-selection",
+      "aliases": ["model-selection", "Model-Selection", "model selection"],
+      "description": ""
+    },
+    {
+      "id": "cost_speed_tradeoff",
+      "label": "cost-speed-tradeoff",
+      "aliases": [
+        "cost-speed-tradeoff",
+        "Cost-Speed-Tradeoff",
+        "cost speed tradeoff"
+      ],
+      "description": ""
+    },
+    {
+      "id": "grounding",
+      "label": "grounding",
+      "aliases": ["grounding", "Grounding"],
+      "description": ""
+    },
+    {
+      "id": "rag",
+      "label": "rag",
+      "aliases": ["rag", "Rag"],
+      "description": ""
+    },
+    {
+      "id": "model_selection",
+      "label": "model_selection",
+      "aliases": [
+        "model_selection",
+        "Model_Selection",
+        "model selection",
+        "model-selection"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_library",
+      "label": "model-library",
+      "aliases": ["model-library", "Model-Library", "model library"],
+      "description": ""
+    },
+    {
+      "id": "selection_criteria",
+      "label": "selection-criteria",
+      "aliases": [
+        "selection-criteria",
+        "Selection-Criteria",
+        "selection criteria"
+      ],
+      "description": ""
+    },
+    {
+      "id": "cross_industry",
+      "label": "cross-industry",
+      "aliases": ["cross-industry", "Cross-Industry", "cross industry"],
+      "description": ""
+    },
+    {
+      "id": "scenarios",
+      "label": "scenarios",
+      "aliases": ["scenarios", "Scenarios"],
+      "description": ""
+    },
+    {
+      "id": "llm_access",
+      "label": "llm-access",
+      "aliases": ["llm-access", "Llm-Access", "llm access"],
+      "description": ""
+    },
+    {
+      "id": "low_code",
+      "label": "low-code",
+      "aliases": ["low-code", "Low-Code", "low code"],
+      "description": ""
+    },
+    {
+      "id": "hub_value",
+      "label": "hub-value",
+      "aliases": ["hub-value", "Hub-Value", "hub value"],
+      "description": ""
+    },
+    {
+      "id": "facility_solutions",
+      "label": "facility_solutions",
+      "aliases": [
+        "facility_solutions",
+        "Facility_Solutions",
+        "facility solutions",
+        "facility-solutions"
+      ],
+      "description": ""
+    },
+    {
+      "id": "document_grounding",
+      "label": "document_grounding",
+      "aliases": [
+        "document_grounding",
+        "Document_Grounding",
+        "document grounding",
+        "document-grounding"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ai_workflows",
+      "label": "ai-workflows",
+      "aliases": ["ai-workflows", "Ai-Workflows", "ai workflows"],
+      "description": ""
+    },
+    {
+      "id": "api_harmonization",
+      "label": "api-harmonization",
+      "aliases": [
+        "api-harmonization",
+        "Api-Harmonization",
+        "api harmonization"
+      ],
+      "description": ""
+    },
+    {
+      "id": "privacy",
+      "label": "privacy",
+      "aliases": ["privacy", "Privacy"],
+      "description": ""
+    },
+    {
+      "id": "workflows",
+      "label": "workflows",
+      "aliases": ["workflows", "Workflows"],
+      "description": ""
+    },
+    {
+      "id": "ui_actions",
+      "label": "ui-actions",
+      "aliases": ["ui-actions", "Ui-Actions", "ui actions"],
+      "description": ""
+    },
+    {
+      "id": "release_notes",
+      "label": "release-notes",
+      "aliases": ["release-notes", "Release-Notes", "release notes"],
+      "description": ""
+    },
+    {
+      "id": "install",
+      "label": "install",
+      "aliases": ["install", "Install"],
+      "description": ""
+    },
+    {
+      "id": "limitations",
+      "label": "limitations",
+      "aliases": ["limitations", "Limitations"],
+      "description": ""
+    },
+    {
+      "id": "best_practices",
+      "label": "best-practices",
+      "aliases": ["best-practices", "Best-Practices", "best practices"],
+      "description": ""
+    },
+    {
+      "id": "function_calling",
+      "label": "function-calling",
+      "aliases": ["function-calling", "Function-Calling", "function calling"],
+      "description": ""
+    },
+    {
+      "id": "vector_engine",
+      "label": "vector-engine",
+      "aliases": ["vector-engine", "Vector-Engine", "vector engine"],
+      "description": ""
+    },
+    {
+      "id": "hana",
+      "label": "hana",
+      "aliases": ["hana", "Hana"],
+      "description": ""
+    },
+    {
+      "id": "vectors",
+      "label": "vectors",
+      "aliases": ["vectors", "Vectors"],
+      "description": ""
+    },
+    {
+      "id": "embeddings",
+      "label": "embeddings",
+      "aliases": ["embeddings", "Embeddings"],
+      "description": ""
+    },
+    {
+      "id": "multimodel",
+      "label": "multimodel",
+      "aliases": ["multimodel", "Multimodel"],
+      "description": ""
+    },
+    {
+      "id": "similarity",
+      "label": "similarity",
+      "aliases": ["similarity", "Similarity"],
+      "description": ""
+    },
+    {
+      "id": "architecture",
+      "label": "architecture",
+      "aliases": ["architecture", "Architecture"],
+      "description": ""
+    },
+    {
+      "id": "retrieval",
+      "label": "retrieval",
+      "aliases": ["retrieval", "Retrieval"],
+      "description": ""
+    },
+    {
+      "id": "knowledge_base",
+      "label": "knowledge-base",
+      "aliases": ["knowledge-base", "Knowledge-Base", "knowledge base"],
+      "description": ""
+    },
+    {
+      "id": "vectorization",
+      "label": "vectorization",
+      "aliases": ["vectorization", "Vectorization"],
+      "description": ""
+    },
+    {
+      "id": "setup",
+      "label": "setup",
+      "aliases": ["setup", "Setup"],
+      "description": ""
+    },
+    {
+      "id": "outputs",
+      "label": "outputs",
+      "aliases": ["outputs", "Outputs"],
+      "description": ""
+    },
+    {
+      "id": "vector_search",
+      "label": "vector-search",
+      "aliases": ["vector-search", "Vector-Search", "vector search"],
+      "description": ""
+    },
+    {
+      "id": "llm_abstraction",
+      "label": "llm-abstraction",
+      "aliases": ["llm-abstraction", "Llm-Abstraction", "llm abstraction"],
+      "description": ""
+    },
+    {
+      "id": "business_impact",
+      "label": "business-impact",
+      "aliases": ["business-impact", "Business-Impact", "business impact"],
+      "description": ""
+    }
+  ],
+  "concept_tags": [
+    {
+      "id": "workflow_orchestration",
+      "label": "workflow-orchestration",
+      "aliases": [
+        "workflow-orchestration",
+        "Workflow-Orchestration",
+        "workflow orchestration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "serving",
+      "label": "serving",
+      "aliases": ["serving", "Serving"],
+      "description": ""
+    },
+    {
+      "id": "training",
+      "label": "training",
+      "aliases": ["training", "Training"],
+      "description": ""
+    },
+    {
+      "id": "batch_inference",
+      "label": "batch-inference",
+      "aliases": ["batch-inference", "Batch-Inference", "batch inference"],
+      "description": ""
+    },
+    {
+      "id": "managed_ai_lifecycle",
+      "label": "managed-ai-lifecycle",
+      "aliases": [
+        "managed-ai-lifecycle",
+        "Managed-Ai-Lifecycle",
+        "managed ai lifecycle"
+      ],
+      "description": ""
+    },
+    {
+      "id": "centralized_operations",
+      "label": "centralized-operations",
+      "aliases": [
+        "centralized-operations",
+        "Centralized-Operations",
+        "centralized operations"
+      ],
+      "description": ""
+    },
+    {
+      "id": "gpu_scalability",
+      "label": "gpu-scalability",
+      "aliases": ["gpu-scalability", "Gpu-Scalability", "gpu scalability"],
+      "description": ""
+    },
+    {
+      "id": "uniform_model_status",
+      "label": "uniform-model-status",
+      "aliases": [
+        "uniform-model-status",
+        "Uniform-Model-Status",
+        "uniform model status"
+      ],
+      "description": ""
+    },
+    {
+      "id": "standardized_training_deployment",
+      "label": "standardized-training-deployment",
+      "aliases": [
+        "standardized-training-deployment",
+        "Standardized-Training-Deployment",
+        "standardized training deployment"
+      ],
+      "description": ""
+    },
+    {
+      "id": "tenant_isolation",
+      "label": "tenant-isolation",
+      "aliases": ["tenant-isolation", "Tenant-Isolation", "tenant isolation"],
+      "description": ""
+    },
+    {
+      "id": "isolation",
+      "label": "isolation",
+      "aliases": ["isolation", "Isolation"],
+      "description": ""
+    },
+    {
+      "id": "access_control",
+      "label": "access control",
+      "aliases": ["access control", "Access Control", "access-control"],
+      "description": ""
+    },
+    {
+      "id": "workspace_scoping",
+      "label": "workspace scoping",
+      "aliases": [
+        "workspace scoping",
+        "Workspace Scoping",
+        "workspace-scoping"
+      ],
+      "description": ""
+    },
+    {
+      "id": "training_io",
+      "label": "training-io",
+      "aliases": ["training-io", "Training-Io", "training io"],
+      "description": ""
+    },
+    {
+      "id": "pipeline_containers",
+      "label": "pipeline-containers",
+      "aliases": [
+        "pipeline-containers",
+        "Pipeline-Containers",
+        "pipeline containers"
+      ],
+      "description": ""
+    },
+    {
+      "id": "resource_plans",
+      "label": "resource-plans",
+      "aliases": ["resource-plans", "Resource-Plans", "resource plans"],
+      "description": ""
+    },
+    {
+      "id": "deployment_readiness",
+      "label": "deployment_readiness",
+      "aliases": [
+        "deployment_readiness",
+        "Deployment_Readiness",
+        "deployment readiness",
+        "deployment-readiness"
+      ],
+      "description": ""
+    },
+    {
+      "id": "endpoint_consumption",
+      "label": "endpoint_consumption",
+      "aliases": [
+        "endpoint_consumption",
+        "Endpoint_Consumption",
+        "endpoint consumption",
+        "endpoint-consumption"
+      ],
+      "description": ""
+    },
+    {
+      "id": "tutorial_sequencing",
+      "label": "tutorial-sequencing",
+      "aliases": [
+        "tutorial-sequencing",
+        "Tutorial-Sequencing",
+        "tutorial sequencing"
+      ],
+      "description": ""
+    },
+    {
+      "id": "benefits_and_risks",
+      "label": "benefits-and-risks",
+      "aliases": [
+        "benefits-and-risks",
+        "Benefits-And-Risks",
+        "benefits and risks"
+      ],
+      "description": ""
+    },
+    {
+      "id": "foundations",
+      "label": "foundations",
+      "aliases": ["foundations", "Foundations"],
+      "description": ""
+    },
+    {
+      "id": "dependency",
+      "label": "dependency",
+      "aliases": ["dependency", "Dependency"],
+      "description": ""
+    },
+    {
+      "id": "technical_complexity",
+      "label": "technical-complexity",
+      "aliases": [
+        "technical-complexity",
+        "Technical-Complexity",
+        "technical complexity"
+      ],
+      "description": ""
+    },
+    {
+      "id": "security_challenges",
+      "label": "security-challenges",
+      "aliases": [
+        "security-challenges",
+        "Security-Challenges",
+        "security challenges"
+      ],
+      "description": ""
+    },
+    {
+      "id": "iterative_experimentation",
+      "label": "iterative_experimentation",
+      "aliases": [
+        "iterative_experimentation",
+        "Iterative_Experimentation",
+        "iterative experimentation",
+        "iterative-experimentation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "role_involvement",
+      "label": "role_involvement",
+      "aliases": [
+        "role_involvement",
+        "Role_Involvement",
+        "role involvement",
+        "role-involvement"
+      ],
+      "description": ""
+    },
+    {
+      "id": "data_input_for_tailoring",
+      "label": "data_input_for_tailoring",
+      "aliases": [
+        "data_input_for_tailoring",
+        "Data_Input_For_Tailoring",
+        "data input for tailoring",
+        "data-input-for-tailoring"
+      ],
+      "description": ""
+    },
+    {
+      "id": "customer_collaboration",
+      "label": "customer-collaboration",
+      "aliases": [
+        "customer-collaboration",
+        "Customer-Collaboration",
+        "customer collaboration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ethical_validation",
+      "label": "ethical-validation",
+      "aliases": [
+        "ethical-validation",
+        "Ethical-Validation",
+        "ethical validation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "technical_evaluation",
+      "label": "technical-evaluation",
+      "aliases": [
+        "technical-evaluation",
+        "Technical-Evaluation",
+        "technical evaluation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "tool_orchestration",
+      "label": "tool_orchestration",
+      "aliases": [
+        "tool_orchestration",
+        "Tool_Orchestration",
+        "tool orchestration",
+        "tool-orchestration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "data_ingestion",
+      "label": "data_ingestion",
+      "aliases": [
+        "data_ingestion",
+        "Data_Ingestion",
+        "data ingestion",
+        "data-ingestion"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ux_strategy",
+      "label": "UX_strategy",
+      "aliases": [
+        "UX_strategy",
+        "ux_strategy",
+        "Ux_Strategy",
+        "ux strategy",
+        "ux-strategy"
+      ],
+      "description": ""
+    },
+    {
+      "id": "context_chaining",
+      "label": "context_chaining",
+      "aliases": [
+        "context_chaining",
+        "Context_Chaining",
+        "context chaining",
+        "context-chaining"
+      ],
+      "description": ""
+    },
+    {
+      "id": "optimization_strategies",
+      "label": "optimization_strategies",
+      "aliases": [
+        "optimization_strategies",
+        "Optimization_Strategies",
+        "optimization strategies",
+        "optimization-strategies"
+      ],
+      "description": ""
+    },
+    {
+      "id": "chain_of_thought",
+      "label": "Chain-of-Thought",
+      "aliases": [
+        "Chain-of-Thought",
+        "chain-of-thought",
+        "Chain-Of-Thought",
+        "chain of thought"
+      ],
+      "description": ""
+    },
+    {
+      "id": "tree_of_thought",
+      "label": "Tree-of-Thought",
+      "aliases": [
+        "Tree-of-Thought",
+        "tree-of-thought",
+        "Tree-Of-Thought",
+        "tree of thought"
+      ],
+      "description": ""
+    },
+    {
+      "id": "rag",
+      "label": "RAG",
+      "aliases": ["RAG", "rag", "Rag"],
+      "description": ""
+    },
+    {
+      "id": "retrieval_augmented_generation",
+      "label": "retrieval-augmented-generation",
+      "aliases": [
+        "retrieval-augmented-generation",
+        "Retrieval-Augmented-Generation",
+        "retrieval augmented generation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "vector_engine",
+      "label": "vector-engine",
+      "aliases": ["vector-engine", "Vector-Engine", "vector engine"],
+      "description": ""
+    },
+    {
+      "id": "fine_tuning_objective",
+      "label": "fine-tuning-objective",
+      "aliases": [
+        "fine-tuning-objective",
+        "Fine-Tuning-Objective",
+        "fine tuning objective"
+      ],
+      "description": ""
+    },
+    {
+      "id": "use_case_performance",
+      "label": "use-case-performance",
+      "aliases": [
+        "use-case-performance",
+        "Use-Case-Performance",
+        "use case performance"
+      ],
+      "description": ""
+    },
+    {
+      "id": "agent_tool_interaction",
+      "label": "agent-tool-interaction",
+      "aliases": [
+        "agent-tool-interaction",
+        "Agent-Tool-Interaction",
+        "agent tool interaction"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompting",
+      "label": "prompting",
+      "aliases": ["prompting", "Prompting"],
+      "description": ""
+    },
+    {
+      "id": "inspection",
+      "label": "inspection",
+      "aliases": ["inspection", "Inspection"],
+      "description": ""
+    },
+    {
+      "id": "rouge",
+      "label": "ROUGE",
+      "aliases": ["ROUGE", "rouge", "Rouge"],
+      "description": ""
+    },
+    {
+      "id": "accuracy",
+      "label": "accuracy",
+      "aliases": ["accuracy", "Accuracy"],
+      "description": ""
+    },
+    {
+      "id": "precision",
+      "label": "precision",
+      "aliases": ["precision", "Precision"],
+      "description": ""
+    },
+    {
+      "id": "recall",
+      "label": "recall",
+      "aliases": ["recall", "Recall"],
+      "description": ""
+    },
+    {
+      "id": "f1",
+      "label": "F1",
+      "aliases": ["F1", "f1"],
+      "description": ""
+    },
+    {
+      "id": "staged_rollout",
+      "label": "staged_rollout",
+      "aliases": [
+        "staged_rollout",
+        "Staged_Rollout",
+        "staged rollout",
+        "staged-rollout"
+      ],
+      "description": ""
+    },
+    {
+      "id": "real_workloads",
+      "label": "real_workloads",
+      "aliases": [
+        "real_workloads",
+        "Real_Workloads",
+        "real workloads",
+        "real-workloads"
+      ],
+      "description": ""
+    },
+    {
+      "id": "automated_alerting",
+      "label": "automated_alerting",
+      "aliases": [
+        "automated_alerting",
+        "Automated_Alerting",
+        "automated alerting",
+        "automated-alerting"
+      ],
+      "description": ""
+    },
+    {
+      "id": "risk_mitigation",
+      "label": "risk_mitigation",
+      "aliases": [
+        "risk_mitigation",
+        "Risk_Mitigation",
+        "risk mitigation",
+        "risk-mitigation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "threat_detection",
+      "label": "threat_detection",
+      "aliases": [
+        "threat_detection",
+        "Threat_Detection",
+        "threat detection",
+        "threat-detection"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_selection",
+      "label": "model selection",
+      "aliases": ["model selection", "Model Selection", "model-selection"],
+      "description": ""
+    },
+    {
+      "id": "ai_lifecycle",
+      "label": "AI lifecycle",
+      "aliases": [
+        "AI lifecycle",
+        "ai lifecycle",
+        "Ai Lifecycle",
+        "ai-lifecycle"
+      ],
+      "description": ""
+    },
+    {
+      "id": "llm_access",
+      "label": "LLM access",
+      "aliases": ["LLM access", "llm access", "Llm Access", "llm-access"],
+      "description": ""
+    },
+    {
+      "id": "coordination",
+      "label": "coordination",
+      "aliases": ["coordination", "Coordination"],
+      "description": ""
+    },
+    {
+      "id": "data_flow",
+      "label": "data-flow",
+      "aliases": ["data-flow", "Data-Flow", "data flow"],
+      "description": ""
+    },
+    {
+      "id": "resource_optimization",
+      "label": "resource-optimization",
+      "aliases": [
+        "resource-optimization",
+        "Resource-Optimization",
+        "resource optimization"
+      ],
+      "description": ""
+    },
+    {
+      "id": "lifecycle_automation",
+      "label": "lifecycle-automation",
+      "aliases": [
+        "lifecycle-automation",
+        "Lifecycle-Automation",
+        "lifecycle automation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_switching",
+      "label": "model-switching",
+      "aliases": ["model-switching", "Model-Switching", "model switching"],
+      "description": ""
+    },
+    {
+      "id": "service_key_purpose",
+      "label": "service key purpose",
+      "aliases": [
+        "service key purpose",
+        "Service Key Purpose",
+        "service-key-purpose"
+      ],
+      "description": ""
+    },
+    {
+      "id": "provisioning_workflow",
+      "label": "provisioning workflow",
+      "aliases": [
+        "provisioning workflow",
+        "Provisioning Workflow",
+        "provisioning-workflow"
+      ],
+      "description": ""
+    },
+    {
+      "id": "llm_non_human_loop",
+      "label": "LLM_non_human_loop",
+      "aliases": [
+        "LLM_non_human_loop",
+        "llm_non_human_loop",
+        "Llm_Non_Human_Loop",
+        "llm non human loop",
+        "llm-non-human-loop"
+      ],
+      "description": ""
+    },
+    {
+      "id": "process_automation",
+      "label": "process_automation",
+      "aliases": [
+        "process_automation",
+        "Process_Automation",
+        "process automation",
+        "process-automation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompt_design",
+      "label": "prompt-design",
+      "aliases": ["prompt-design", "Prompt-Design", "prompt design"],
+      "description": ""
+    },
+    {
+      "id": "sentiment_analysis",
+      "label": "sentiment-analysis",
+      "aliases": [
+        "sentiment-analysis",
+        "Sentiment-Analysis",
+        "sentiment analysis"
+      ],
+      "description": ""
+    },
+    {
+      "id": "priority_detection",
+      "label": "priority-detection",
+      "aliases": [
+        "priority-detection",
+        "Priority-Detection",
+        "priority detection"
+      ],
+      "description": ""
+    },
+    {
+      "id": "urgency_detection",
+      "label": "urgency-detection",
+      "aliases": [
+        "urgency-detection",
+        "Urgency-Detection",
+        "urgency detection"
+      ],
+      "description": ""
+    },
+    {
+      "id": "structured_output",
+      "label": "structured-output",
+      "aliases": [
+        "structured-output",
+        "Structured-Output",
+        "structured output"
+      ],
+      "description": ""
+    },
+    {
+      "id": "compact_json",
+      "label": "compact-json",
+      "aliases": ["compact-json", "Compact-Json", "compact json"],
+      "description": ""
+    },
+    {
+      "id": "key_restriction",
+      "label": "key-restriction",
+      "aliases": ["key-restriction", "Key-Restriction", "key restriction"],
+      "description": ""
+    },
+    {
+      "id": "tool_compatibility",
+      "label": "tool-compatibility",
+      "aliases": [
+        "tool-compatibility",
+        "Tool-Compatibility",
+        "tool compatibility"
+      ],
+      "description": ""
+    },
+    {
+      "id": "business_categories",
+      "label": "business-categories",
+      "aliases": [
+        "business-categories",
+        "Business-Categories",
+        "business categories"
+      ],
+      "description": ""
+    },
+    {
+      "id": "urgent_vs_routine",
+      "label": "urgent-vs-routine",
+      "aliases": [
+        "urgent-vs-routine",
+        "Urgent-Vs-Routine",
+        "urgent vs routine"
+      ],
+      "description": ""
+    },
+    {
+      "id": "schema_alignment",
+      "label": "schema-alignment",
+      "aliases": ["schema-alignment", "Schema-Alignment", "schema alignment"],
+      "description": ""
+    },
+    {
+      "id": "extras_requirements",
+      "label": "extras-requirements",
+      "aliases": [
+        "extras-requirements",
+        "Extras-Requirements",
+        "extras requirements"
+      ],
+      "description": ""
+    },
+    {
+      "id": "package_installation",
+      "label": "package-installation",
+      "aliases": [
+        "package-installation",
+        "Package-Installation",
+        "package installation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "orchestration_need",
+      "label": "orchestration_need",
+      "aliases": [
+        "orchestration_need",
+        "Orchestration_Need",
+        "orchestration need",
+        "orchestration-need"
+      ],
+      "description": ""
+    },
+    {
+      "id": "api_standardization",
+      "label": "api_standardization",
+      "aliases": [
+        "api_standardization",
+        "Api_Standardization",
+        "api standardization",
+        "api-standardization"
+      ],
+      "description": ""
+    },
+    {
+      "id": "multi_model_efficiency",
+      "label": "multi_model_efficiency",
+      "aliases": [
+        "multi_model_efficiency",
+        "Multi_Model_Efficiency",
+        "multi model efficiency",
+        "multi-model-efficiency"
+      ],
+      "description": ""
+    },
+    {
+      "id": "authentication",
+      "label": "authentication",
+      "aliases": ["authentication", "Authentication"],
+      "description": ""
+    },
+    {
+      "id": "deployment",
+      "label": "deployment",
+      "aliases": ["deployment", "Deployment"],
+      "description": ""
+    },
+    {
+      "id": "consumption",
+      "label": "consumption",
+      "aliases": ["consumption", "Consumption"],
+      "description": ""
+    },
+    {
+      "id": "result_access",
+      "label": "result_access",
+      "aliases": [
+        "result_access",
+        "Result_Access",
+        "result access",
+        "result-access"
+      ],
+      "description": ""
+    },
+    {
+      "id": "orchestration_service",
+      "label": "orchestration_service",
+      "aliases": [
+        "orchestration_service",
+        "Orchestration_Service",
+        "orchestration service",
+        "orchestration-service"
+      ],
+      "description": ""
+    },
+    {
+      "id": "template_values",
+      "label": "template_values",
+      "aliases": [
+        "template_values",
+        "Template_Values",
+        "template values",
+        "template-values"
+      ],
+      "description": ""
+    },
+    {
+      "id": "deployment_retrieval_creation",
+      "label": "deployment_retrieval_creation",
+      "aliases": [
+        "deployment_retrieval_creation",
+        "Deployment_Retrieval_Creation",
+        "deployment retrieval creation",
+        "deployment-retrieval-creation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "configuration_coordination",
+      "label": "configuration_coordination",
+      "aliases": [
+        "configuration_coordination",
+        "Configuration_Coordination",
+        "configuration coordination",
+        "configuration-coordination"
+      ],
+      "description": ""
+    },
+    {
+      "id": "timeout_execution",
+      "label": "timeout_execution",
+      "aliases": [
+        "timeout_execution",
+        "Timeout_Execution",
+        "timeout execution",
+        "timeout-execution"
+      ],
+      "description": ""
+    },
+    {
+      "id": "partial",
+      "label": "partial",
+      "aliases": ["partial", "Partial"],
+      "description": ""
+    },
+    {
+      "id": "templated_prompts",
+      "label": "templated-prompts",
+      "aliases": [
+        "templated-prompts",
+        "Templated-Prompts",
+        "templated prompts"
+      ],
+      "description": ""
+    },
+    {
+      "id": "default_arguments",
+      "label": "default-arguments",
+      "aliases": [
+        "default-arguments",
+        "Default-Arguments",
+        "default arguments"
+      ],
+      "description": ""
+    },
+    {
+      "id": "json_format",
+      "label": "JSON format",
+      "aliases": ["JSON format", "json format", "Json Format", "json-format"],
+      "description": ""
+    },
+    {
+      "id": "software_ready_output",
+      "label": "software-ready output",
+      "aliases": [
+        "software-ready output",
+        "Software-Ready Output",
+        "software ready output",
+        "software-ready-output"
+      ],
+      "description": ""
+    },
+    {
+      "id": "urgency_sentiment_extraction",
+      "label": "urgency/sentiment extraction",
+      "aliases": [
+        "urgency/sentiment extraction",
+        "Urgency/Sentiment Extraction",
+        "urgency sentiment extraction",
+        "urgency-sentiment-extraction"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompt_template",
+      "label": "prompt_template",
+      "aliases": [
+        "prompt_template",
+        "Prompt_Template",
+        "prompt template",
+        "prompt-template"
+      ],
+      "description": ""
+    },
+    {
+      "id": "valid_json",
+      "label": "valid_json",
+      "aliases": ["valid_json", "Valid_Json", "valid json", "valid-json"],
+      "description": ""
+    },
+    {
+      "id": "category_tags",
+      "label": "category_tags",
+      "aliases": [
+        "category_tags",
+        "Category_Tags",
+        "category tags",
+        "category-tags"
+      ],
+      "description": ""
+    },
+    {
+      "id": "evaluation_functions",
+      "label": "evaluation_functions",
+      "aliases": [
+        "evaluation_functions",
+        "Evaluation_Functions",
+        "evaluation functions",
+        "evaluation-functions"
+      ],
+      "description": ""
+    },
+    {
+      "id": "automated_testing",
+      "label": "automated_testing",
+      "aliases": [
+        "automated_testing",
+        "Automated_Testing",
+        "automated testing",
+        "automated-testing"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ground_truth_comparison",
+      "label": "ground_truth_comparison",
+      "aliases": [
+        "ground_truth_comparison",
+        "Ground_Truth_Comparison",
+        "ground truth comparison",
+        "ground-truth-comparison"
+      ],
+      "description": ""
+    },
+    {
+      "id": "dataset_evaluation",
+      "label": "dataset_evaluation",
+      "aliases": [
+        "dataset_evaluation",
+        "Dataset_Evaluation",
+        "dataset evaluation",
+        "dataset-evaluation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "metric_interpretation",
+      "label": "metric_interpretation",
+      "aliases": [
+        "metric_interpretation",
+        "Metric_Interpretation",
+        "metric interpretation",
+        "metric-interpretation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "few_shot_prompting",
+      "label": "few-shot prompting",
+      "aliases": [
+        "few-shot prompting",
+        "Few-Shot Prompting",
+        "few shot prompting",
+        "few-shot-prompting"
+      ],
+      "description": ""
+    },
+    {
+      "id": "one_shot_prompting",
+      "label": "one-shot prompting",
+      "aliases": [
+        "one-shot prompting",
+        "One-Shot Prompting",
+        "one shot prompting",
+        "one-shot-prompting"
+      ],
+      "description": ""
+    },
+    {
+      "id": "metaprompting",
+      "label": "metaprompting",
+      "aliases": ["metaprompting", "Metaprompting"],
+      "description": ""
+    },
+    {
+      "id": "random_seed",
+      "label": "random seed",
+      "aliases": ["random seed", "Random Seed", "random-seed"],
+      "description": ""
+    },
+    {
+      "id": "few_shot_examples",
+      "label": "few-shot examples",
+      "aliases": [
+        "few-shot examples",
+        "Few-Shot Examples",
+        "few shot examples",
+        "few-shot-examples"
+      ],
+      "description": ""
+    },
+    {
+      "id": "dev_set_sampling",
+      "label": "dev set sampling",
+      "aliases": ["dev set sampling", "Dev Set Sampling", "dev-set-sampling"],
+      "description": ""
+    },
+    {
+      "id": "instruction_guides",
+      "label": "instruction_guides",
+      "aliases": [
+        "instruction_guides",
+        "Instruction_Guides",
+        "instruction guides",
+        "instruction-guides"
+      ],
+      "description": ""
+    },
+    {
+      "id": "options_vs_key",
+      "label": "options_vs_key",
+      "aliases": [
+        "options_vs_key",
+        "Options_Vs_Key",
+        "options vs key",
+        "options-vs-key"
+      ],
+      "description": ""
+    },
+    {
+      "id": "example_driven",
+      "label": "example-driven",
+      "aliases": ["example-driven", "Example-Driven", "example driven"],
+      "description": ""
+    },
+    {
+      "id": "placeholders",
+      "label": "placeholders",
+      "aliases": ["placeholders", "Placeholders"],
+      "description": ""
+    },
+    {
+      "id": "guide_application",
+      "label": "guide_application",
+      "aliases": [
+        "guide_application",
+        "Guide_Application",
+        "guide application",
+        "guide-application"
+      ],
+      "description": ""
+    },
+    {
+      "id": "few_shot_learning",
+      "label": "few-shot-learning",
+      "aliases": [
+        "few-shot-learning",
+        "Few-Shot-Learning",
+        "few shot learning"
+      ],
+      "description": ""
+    },
+    {
+      "id": "guided_generation",
+      "label": "guided-generation",
+      "aliases": [
+        "guided-generation",
+        "Guided-Generation",
+        "guided generation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "json_structured_output",
+      "label": "JSON-structured-output",
+      "aliases": [
+        "JSON-structured-output",
+        "json-structured-output",
+        "Json-Structured-Output",
+        "json structured output"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_specialization",
+      "label": "model_specialization",
+      "aliases": [
+        "model_specialization",
+        "Model_Specialization",
+        "model specialization",
+        "model-specialization"
+      ],
+      "description": ""
+    },
+    {
+      "id": "deployment_flexibility",
+      "label": "deployment_flexibility",
+      "aliases": [
+        "deployment_flexibility",
+        "Deployment_Flexibility",
+        "deployment flexibility",
+        "deployment-flexibility"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_launchpad",
+      "label": "SAP AI Launchpad",
+      "aliases": [
+        "SAP AI Launchpad",
+        "sap ai launchpad",
+        "Sap Ai Launchpad",
+        "sap-ai-launchpad"
+      ],
+      "description": ""
+    },
+    {
+      "id": "configurations",
+      "label": "Configurations",
+      "aliases": ["Configurations", "configurations"],
+      "description": ""
+    },
+    {
+      "id": "executable_templates",
+      "label": "Executable templates",
+      "aliases": [
+        "Executable templates",
+        "executable templates",
+        "Executable Templates",
+        "executable-templates"
+      ],
+      "description": ""
+    },
+    {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "aliases": ["Orchestration", "orchestration"],
+      "description": ""
+    },
+    {
+      "id": "model_evaluation",
+      "label": "model_evaluation",
+      "aliases": [
+        "model_evaluation",
+        "Model_Evaluation",
+        "model evaluation",
+        "model-evaluation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sdk_usage",
+      "label": "sdk_usage",
+      "aliases": ["sdk_usage", "Sdk_Usage", "sdk usage", "sdk-usage"],
+      "description": ""
+    },
+    {
+      "id": "probabilistic_outputs",
+      "label": "probabilistic-outputs",
+      "aliases": [
+        "probabilistic-outputs",
+        "Probabilistic-Outputs",
+        "probabilistic outputs"
+      ],
+      "description": ""
+    },
+    {
+      "id": "cost_performance",
+      "label": "cost-performance",
+      "aliases": ["cost-performance", "Cost-Performance", "cost performance"],
+      "description": ""
+    },
+    {
+      "id": "model_choice",
+      "label": "model-choice",
+      "aliases": ["model-choice", "Model-Choice", "model choice"],
+      "description": ""
+    },
+    {
+      "id": "cost_performance_tradeoffs",
+      "label": "cost-performance tradeoffs",
+      "aliases": [
+        "cost-performance tradeoffs",
+        "Cost-Performance Tradeoffs",
+        "cost performance tradeoffs",
+        "cost-performance-tradeoffs"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_generative_ai_hub",
+      "label": "SAP generative AI hub",
+      "aliases": [
+        "SAP generative AI hub",
+        "sap generative ai hub",
+        "Sap Generative Ai Hub",
+        "sap-generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "evaluation_functions",
+      "label": "evaluation functions",
+      "aliases": [
+        "evaluation functions",
+        "Evaluation Functions",
+        "evaluation-functions"
+      ],
+      "description": ""
+    },
+    {
+      "id": "catalog_leaderboard_modes",
+      "label": "catalog/leaderboard modes",
+      "aliases": [
+        "catalog/leaderboard modes",
+        "Catalog/Leaderboard Modes",
+        "catalog leaderboard modes",
+        "catalog-leaderboard-modes"
+      ],
+      "description": ""
+    },
+    {
+      "id": "rag_document_grounding",
+      "label": "RAG/document grounding",
+      "aliases": [
+        "RAG/document grounding",
+        "rag/document grounding",
+        "Rag/Document Grounding",
+        "rag document grounding",
+        "rag-document-grounding"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompt_engineering",
+      "label": "prompt-engineering",
+      "aliases": [
+        "prompt-engineering",
+        "Prompt-Engineering",
+        "prompt engineering"
+      ],
+      "description": ""
+    },
+    {
+      "id": "integration",
+      "label": "integration",
+      "aliases": ["integration", "Integration"],
+      "description": ""
+    },
+    {
+      "id": "safeguards",
+      "label": "safeguards",
+      "aliases": ["safeguards", "Safeguards"],
+      "description": ""
+    },
+    {
+      "id": "llm_orchestration",
+      "label": "LLM_orchestration",
+      "aliases": [
+        "LLM_orchestration",
+        "llm_orchestration",
+        "Llm_Orchestration",
+        "llm orchestration",
+        "llm-orchestration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "finance_use_case",
+      "label": "finance_use_case",
+      "aliases": [
+        "finance_use_case",
+        "Finance_Use_Case",
+        "finance use case",
+        "finance-use-case"
+      ],
+      "description": ""
+    },
+    {
+      "id": "workflow_streamlining",
+      "label": "workflow_streamlining",
+      "aliases": [
+        "workflow_streamlining",
+        "Workflow_Streamlining",
+        "workflow streamlining",
+        "workflow-streamlining"
+      ],
+      "description": ""
+    },
+    {
+      "id": "single_virtual_deployment",
+      "label": "single-virtual-deployment",
+      "aliases": [
+        "single-virtual-deployment",
+        "Single-Virtual-Deployment",
+        "single virtual deployment"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_access_simplification",
+      "label": "model-access-simplification",
+      "aliases": [
+        "model-access-simplification",
+        "Model-Access-Simplification",
+        "model access simplification"
+      ],
+      "description": ""
+    },
+    {
+      "id": "grounding",
+      "label": "grounding",
+      "aliases": ["grounding", "Grounding"],
+      "description": ""
+    },
+    {
+      "id": "sap_hana_vector_db",
+      "label": "SAP_HANA_vector_db",
+      "aliases": [
+        "SAP_HANA_vector_db",
+        "sap_hana_vector_db",
+        "Sap_Hana_Vector_Db",
+        "sap hana vector db",
+        "sap-hana-vector-db"
+      ],
+      "description": ""
+    },
+    {
+      "id": "orchestration_service",
+      "label": "orchestration service",
+      "aliases": [
+        "orchestration service",
+        "Orchestration Service",
+        "orchestration-service"
+      ],
+      "description": ""
+    },
+    {
+      "id": "dependencies",
+      "label": "dependencies",
+      "aliases": ["dependencies", "Dependencies"],
+      "description": ""
+    },
+    {
+      "id": "harmonized_api",
+      "label": "harmonized_api",
+      "aliases": [
+        "harmonized_api",
+        "Harmonized_Api",
+        "harmonized api",
+        "harmonized-api"
+      ],
+      "description": ""
+    },
+    {
+      "id": "workflow_backbone",
+      "label": "workflow_backbone",
+      "aliases": [
+        "workflow_backbone",
+        "Workflow_Backbone",
+        "workflow backbone",
+        "workflow-backbone"
+      ],
+      "description": ""
+    },
+    {
+      "id": "content_filtering",
+      "label": "content_filtering",
+      "aliases": [
+        "content_filtering",
+        "Content_Filtering",
+        "content filtering",
+        "content-filtering"
+      ],
+      "description": ""
+    },
+    {
+      "id": "streamlined_development",
+      "label": "streamlined_development",
+      "aliases": [
+        "streamlined_development",
+        "Streamlined_Development",
+        "streamlined development",
+        "streamlined-development"
+      ],
+      "description": ""
+    },
+    {
+      "id": "mandatory_modules",
+      "label": "mandatory_modules",
+      "aliases": [
+        "mandatory_modules",
+        "Mandatory_Modules",
+        "mandatory modules",
+        "mandatory-modules"
+      ],
+      "description": ""
+    },
+    {
+      "id": "service_configuration",
+      "label": "service_configuration",
+      "aliases": [
+        "service_configuration",
+        "Service_Configuration",
+        "service configuration",
+        "service-configuration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "upload",
+      "label": "upload",
+      "aliases": ["upload", "Upload"],
+      "description": ""
+    },
+    {
+      "id": "download",
+      "label": "download",
+      "aliases": ["download", "Download"],
+      "description": ""
+    },
+    {
+      "id": "file_limits",
+      "label": "file-limits",
+      "aliases": ["file-limits", "File-Limits", "file limits"],
+      "description": ""
+    },
+    {
+      "id": "streaming_support",
+      "label": "streaming-support",
+      "aliases": [
+        "streaming-support",
+        "Streaming-Support",
+        "streaming support"
+      ],
+      "description": ""
+    },
+    {
+      "id": "installation_extras",
+      "label": "installation-extras",
+      "aliases": [
+        "installation-extras",
+        "Installation-Extras",
+        "installation extras"
+      ],
+      "description": ""
+    },
+    {
+      "id": "api_logging",
+      "label": "api-logging",
+      "aliases": ["api-logging", "Api-Logging", "api logging"],
+      "description": ""
+    },
+    {
+      "id": "function_calling_gap",
+      "label": "function_calling_gap",
+      "aliases": [
+        "function_calling_gap",
+        "Function_Calling_Gap",
+        "function calling gap",
+        "function-calling-gap"
+      ],
+      "description": ""
+    },
+    {
+      "id": "vector_embeddings",
+      "label": "vector_embeddings",
+      "aliases": [
+        "vector_embeddings",
+        "Vector_Embeddings",
+        "vector embeddings",
+        "vector-embeddings"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_hana_vector_engine",
+      "label": "SAP HANA Vector Engine",
+      "aliases": [
+        "SAP HANA Vector Engine",
+        "sap hana vector engine",
+        "Sap Hana Vector Engine",
+        "sap-hana-vector-engine"
+      ],
+      "description": ""
+    },
+    {
+      "id": "multimodel_processing",
+      "label": "multimodel processing",
+      "aliases": [
+        "multimodel processing",
+        "Multimodel Processing",
+        "multimodel-processing"
+      ],
+      "description": ""
+    },
+    {
+      "id": "text_embeddings",
+      "label": "text embeddings",
+      "aliases": ["text embeddings", "Text Embeddings", "text-embeddings"],
+      "description": ""
+    },
+    {
+      "id": "vector_similarity",
+      "label": "vector similarity",
+      "aliases": [
+        "vector similarity",
+        "Vector Similarity",
+        "vector-similarity"
+      ],
+      "description": ""
+    },
+    {
+      "id": "document_store",
+      "label": "document_store",
+      "aliases": [
+        "document_store",
+        "Document_Store",
+        "document store",
+        "document-store"
+      ],
+      "description": ""
+    },
+    {
+      "id": "vector_engine",
+      "label": "vector_engine",
+      "aliases": [
+        "vector_engine",
+        "Vector_Engine",
+        "vector engine",
+        "vector-engine"
+      ],
+      "description": ""
+    },
+    {
+      "id": "document_grounding",
+      "label": "document_grounding",
+      "aliases": [
+        "document_grounding",
+        "Document_Grounding",
+        "document grounding",
+        "document-grounding"
+      ],
+      "description": ""
+    },
+    {
+      "id": "vector_knowledge_base",
+      "label": "vector_knowledge_base",
+      "aliases": [
+        "vector_knowledge_base",
+        "Vector_Knowledge_Base",
+        "vector knowledge base",
+        "vector-knowledge-base"
+      ],
+      "description": ""
+    },
+    {
+      "id": "resource_group",
+      "label": "resource_group",
+      "aliases": [
+        "resource_group",
+        "Resource_Group",
+        "resource group",
+        "resource-group"
+      ],
+      "description": ""
+    },
+    {
+      "id": "vector_database",
+      "label": "vector_database",
+      "aliases": [
+        "vector_database",
+        "Vector_Database",
+        "vector database",
+        "vector-database"
+      ],
+      "description": ""
+    },
+    {
+      "id": "embeddings",
+      "label": "embeddings",
+      "aliases": ["embeddings", "Embeddings"],
+      "description": ""
+    },
+    {
+      "id": "template_value",
+      "label": "template_value",
+      "aliases": [
+        "template_value",
+        "Template_Value",
+        "template value",
+        "template-value"
+      ],
+      "description": ""
+    },
+    {
+      "id": "printed_output",
+      "label": "printed_output",
+      "aliases": [
+        "printed_output",
+        "Printed_Output",
+        "printed output",
+        "printed-output"
+      ],
+      "description": ""
+    },
+    {
+      "id": "document_grounding",
+      "label": "document-grounding",
+      "aliases": [
+        "document-grounding",
+        "Document-Grounding",
+        "document grounding"
+      ],
+      "description": ""
+    },
+    {
+      "id": "llm_abstraction_layer",
+      "label": "LLM-abstraction-layer",
+      "aliases": [
+        "LLM-abstraction-layer",
+        "llm-abstraction-layer",
+        "Llm-Abstraction-Layer",
+        "llm abstraction layer"
+      ],
+      "description": ""
+    }
+  ],
+  "context_tags": [
+    {
+      "id": "sap_btp",
+      "label": "sap-btp",
+      "aliases": ["sap-btp", "Sap-Btp", "sap btp"],
+      "description": ""
+    },
+    {
+      "id": "launchpad",
+      "label": "launchpad",
+      "aliases": ["launchpad", "Launchpad"],
+      "description": ""
+    },
+    {
+      "id": "docker",
+      "label": "docker",
+      "aliases": ["docker", "Docker"],
+      "description": ""
+    },
+    {
+      "id": "github",
+      "label": "github",
+      "aliases": ["github", "Github"],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_core",
+      "label": "sap-ai-core",
+      "aliases": ["sap-ai-core", "Sap-Ai-Core", "sap ai core"],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_launchpad",
+      "label": "sap-ai-launchpad",
+      "aliases": ["sap-ai-launchpad", "Sap-Ai-Launchpad", "sap ai launchpad"],
+      "description": ""
+    },
+    {
+      "id": "ai_api",
+      "label": "ai-api",
+      "aliases": ["ai-api", "Ai-Api", "ai api"],
+      "description": ""
+    },
+    {
+      "id": "gitops",
+      "label": "gitops",
+      "aliases": ["gitops", "Gitops"],
+      "description": ""
+    },
+    {
+      "id": "object_store_secret",
+      "label": "object store secret",
+      "aliases": [
+        "object store secret",
+        "Object Store Secret",
+        "object-store-secret"
+      ],
+      "description": ""
+    },
+    {
+      "id": "hyperscaler_storage",
+      "label": "hyperscaler storage",
+      "aliases": [
+        "hyperscaler storage",
+        "Hyperscaler Storage",
+        "hyperscaler-storage"
+      ],
+      "description": ""
+    },
+    {
+      "id": "dataset_variation",
+      "label": "dataset-variation",
+      "aliases": [
+        "dataset-variation",
+        "Dataset-Variation",
+        "dataset variation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "automatic_registration",
+      "label": "automatic-registration",
+      "aliases": [
+        "automatic-registration",
+        "Automatic-Registration",
+        "automatic registration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_core",
+      "label": "SAP_AI_Core",
+      "aliases": [
+        "SAP_AI_Core",
+        "sap_ai_core",
+        "Sap_Ai_Core",
+        "sap ai core",
+        "sap-ai-core"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_serving",
+      "label": "model_serving",
+      "aliases": [
+        "model_serving",
+        "Model_Serving",
+        "model serving",
+        "model-serving"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_core",
+      "label": "SAP AI Core",
+      "aliases": ["SAP AI Core", "sap ai core", "Sap Ai Core", "sap-ai-core"],
+      "description": ""
+    },
+    {
+      "id": "llm_fundamentals",
+      "label": "LLM fundamentals",
+      "aliases": [
+        "LLM fundamentals",
+        "llm fundamentals",
+        "Llm Fundamentals",
+        "llm-fundamentals"
+      ],
+      "description": ""
+    },
+    {
+      "id": "saas",
+      "label": "saas",
+      "aliases": ["saas", "Saas"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai",
+      "label": "generative-ai",
+      "aliases": ["generative-ai", "Generative-Ai", "generative ai"],
+      "description": ""
+    },
+    {
+      "id": "enterprise",
+      "label": "enterprise",
+      "aliases": ["enterprise", "Enterprise"],
+      "description": ""
+    },
+    {
+      "id": "sap_business_ai",
+      "label": "sap_business_ai",
+      "aliases": [
+        "sap_business_ai",
+        "Sap_Business_Ai",
+        "sap business ai",
+        "sap-business-ai"
+      ],
+      "description": ""
+    },
+    {
+      "id": "early_ideation",
+      "label": "early_ideation",
+      "aliases": [
+        "early_ideation",
+        "Early_Ideation",
+        "early ideation",
+        "early-ideation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "application_integration",
+      "label": "application_integration",
+      "aliases": [
+        "application_integration",
+        "Application_Integration",
+        "application integration",
+        "application-integration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_strategy",
+      "label": "sap-ai-strategy",
+      "aliases": ["sap-ai-strategy", "Sap-Ai-Strategy", "sap ai strategy"],
+      "description": ""
+    },
+    {
+      "id": "design_led_development",
+      "label": "design-led-development",
+      "aliases": [
+        "design-led-development",
+        "Design-Led-Development",
+        "design led development"
+      ],
+      "description": ""
+    },
+    {
+      "id": "data_protection",
+      "label": "data-protection",
+      "aliases": ["data-protection", "Data-Protection", "data protection"],
+      "description": ""
+    },
+    {
+      "id": "sap_standards",
+      "label": "SAP_standards",
+      "aliases": [
+        "SAP_standards",
+        "sap_standards",
+        "Sap_Standards",
+        "sap standards",
+        "sap-standards"
+      ],
+      "description": ""
+    },
+    {
+      "id": "framework_combination",
+      "label": "framework_combination",
+      "aliases": [
+        "framework_combination",
+        "Framework_Combination",
+        "framework combination",
+        "framework-combination"
+      ],
+      "description": ""
+    },
+    {
+      "id": "lesson_overview",
+      "label": "lesson_overview",
+      "aliases": [
+        "lesson_overview",
+        "Lesson_Overview",
+        "lesson overview",
+        "lesson-overview"
+      ],
+      "description": ""
+    },
+    {
+      "id": "limitations",
+      "label": "limitations",
+      "aliases": ["limitations", "Limitations"],
+      "description": ""
+    },
+    {
+      "id": "plant_growth_example",
+      "label": "plant-growth-example",
+      "aliases": [
+        "plant-growth-example",
+        "Plant-Growth-Example",
+        "plant growth example"
+      ],
+      "description": ""
+    },
+    {
+      "id": "llm_techniques",
+      "label": "LLM-techniques",
+      "aliases": [
+        "LLM-techniques",
+        "llm-techniques",
+        "Llm-Techniques",
+        "llm techniques"
+      ],
+      "description": ""
+    },
+    {
+      "id": "database_integration",
+      "label": "database-integration",
+      "aliases": [
+        "database-integration",
+        "Database-Integration",
+        "database integration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "scalability",
+      "label": "scalability",
+      "aliases": ["scalability", "Scalability"],
+      "description": ""
+    },
+    {
+      "id": "agents_functions_tools",
+      "label": "agents-functions-tools",
+      "aliases": [
+        "agents-functions-tools",
+        "Agents-Functions-Tools",
+        "agents functions tools"
+      ],
+      "description": ""
+    },
+    {
+      "id": "lesson_intro",
+      "label": "lesson-intro",
+      "aliases": ["lesson-intro", "Lesson-Intro", "lesson intro"],
+      "description": ""
+    },
+    {
+      "id": "developer_setup",
+      "label": "developer-setup",
+      "aliases": ["developer-setup", "Developer-Setup", "developer setup"],
+      "description": ""
+    },
+    {
+      "id": "evaluation_metrics",
+      "label": "evaluation-metrics",
+      "aliases": [
+        "evaluation-metrics",
+        "Evaluation-Metrics",
+        "evaluation metrics"
+      ],
+      "description": ""
+    },
+    {
+      "id": "llm_inference",
+      "label": "LLM_inference",
+      "aliases": [
+        "LLM_inference",
+        "llm_inference",
+        "Llm_Inference",
+        "llm inference",
+        "llm-inference"
+      ],
+      "description": ""
+    },
+    {
+      "id": "assessment",
+      "label": "assessment",
+      "aliases": ["assessment", "Assessment"],
+      "description": ""
+    },
+    {
+      "id": "llmops",
+      "label": "LLMops",
+      "aliases": ["LLMops", "llmops", "Llmops"],
+      "description": ""
+    },
+    {
+      "id": "production_validation",
+      "label": "production_validation",
+      "aliases": [
+        "production_validation",
+        "Production_Validation",
+        "production validation",
+        "production-validation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "business_critical_ai",
+      "label": "business_critical_ai",
+      "aliases": [
+        "business_critical_ai",
+        "Business_Critical_Ai",
+        "business critical ai",
+        "business-critical-ai"
+      ],
+      "description": ""
+    },
+    {
+      "id": "safety_evaluation",
+      "label": "safety_evaluation",
+      "aliases": [
+        "safety_evaluation",
+        "Safety_Evaluation",
+        "safety evaluation",
+        "safety-evaluation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_btp",
+      "label": "SAP BTP",
+      "aliases": ["SAP BTP", "sap btp", "Sap Btp", "sap-btp"],
+      "description": ""
+    },
+    {
+      "id": "ai_core",
+      "label": "AI Core",
+      "aliases": ["AI Core", "ai core", "Ai Core", "ai-core"],
+      "description": ""
+    },
+    {
+      "id": "ai_launchpad",
+      "label": "AI Launchpad",
+      "aliases": [
+        "AI Launchpad",
+        "ai launchpad",
+        "Ai Launchpad",
+        "ai-launchpad"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ai_launchpad",
+      "label": "ai-launchpad",
+      "aliases": ["ai-launchpad", "Ai-Launchpad", "ai launchpad"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub",
+      "label": "generative-ai-hub",
+      "aliases": [
+        "generative-ai-hub",
+        "Generative-Ai-Hub",
+        "generative ai hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_btp_cockpit",
+      "label": "sap btp cockpit",
+      "aliases": ["sap btp cockpit", "Sap Btp Cockpit", "sap-btp-cockpit"],
+      "description": ""
+    },
+    {
+      "id": "ai_core_access",
+      "label": "ai core access",
+      "aliases": ["ai core access", "Ai Core Access", "ai-core-access"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub",
+      "label": "generative_ai_hub",
+      "aliases": [
+        "generative_ai_hub",
+        "Generative_Ai_Hub",
+        "generative ai hub",
+        "generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "product_description_standardization",
+      "label": "product_description_standardization",
+      "aliases": [
+        "product_description_standardization",
+        "Product_Description_Standardization",
+        "product description standardization",
+        "product-description-standardization"
+      ],
+      "description": ""
+    },
+    {
+      "id": "facility_solutions",
+      "label": "facility-solutions",
+      "aliases": [
+        "facility-solutions",
+        "Facility-Solutions",
+        "facility solutions"
+      ],
+      "description": ""
+    },
+    {
+      "id": "email",
+      "label": "email",
+      "aliases": ["email", "Email"],
+      "description": ""
+    },
+    {
+      "id": "hvac_support",
+      "label": "HVAC-support",
+      "aliases": [
+        "HVAC-support",
+        "hvac-support",
+        "Hvac-Support",
+        "hvac support"
+      ],
+      "description": ""
+    },
+    {
+      "id": "json_output",
+      "label": "json-output",
+      "aliases": ["json-output", "Json-Output", "json output"],
+      "description": ""
+    },
+    {
+      "id": "prompt_editor",
+      "label": "prompt-editor",
+      "aliases": ["prompt-editor", "Prompt-Editor", "prompt editor"],
+      "description": ""
+    },
+    {
+      "id": "category_assignment",
+      "label": "category-assignment",
+      "aliases": [
+        "category-assignment",
+        "Category-Assignment",
+        "category assignment"
+      ],
+      "description": ""
+    },
+    {
+      "id": "output_discipline",
+      "label": "output-discipline",
+      "aliases": [
+        "output-discipline",
+        "Output-Discipline",
+        "output discipline"
+      ],
+      "description": ""
+    },
+    {
+      "id": "customer_message",
+      "label": "customer-message",
+      "aliases": ["customer-message", "Customer-Message", "customer message"],
+      "description": ""
+    },
+    {
+      "id": "facilities",
+      "label": "facilities",
+      "aliases": ["facilities", "Facilities"],
+      "description": ""
+    },
+    {
+      "id": "tag_selection",
+      "label": "tag-selection",
+      "aliases": ["tag-selection", "Tag-Selection", "tag selection"],
+      "description": ""
+    },
+    {
+      "id": "facility_solutions_scenario",
+      "label": "facility_solutions_scenario",
+      "aliases": [
+        "facility_solutions_scenario",
+        "Facility_Solutions_Scenario",
+        "facility solutions scenario",
+        "facility-solutions-scenario"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sdk_prompts",
+      "label": "sdk_prompts",
+      "aliases": ["sdk_prompts", "Sdk_Prompts", "sdk prompts", "sdk-prompts"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub_sdk",
+      "label": "generative-ai-hub-sdk",
+      "aliases": [
+        "generative-ai-hub-sdk",
+        "Generative-Ai-Hub-Sdk",
+        "generative ai hub sdk"
+      ],
+      "description": ""
+    },
+    {
+      "id": "orchestration_steps",
+      "label": "orchestration-steps",
+      "aliases": [
+        "orchestration-steps",
+        "Orchestration-Steps",
+        "orchestration steps"
+      ],
+      "description": ""
+    },
+    {
+      "id": "minimal_example",
+      "label": "minimal_example",
+      "aliases": [
+        "minimal_example",
+        "Minimal_Example",
+        "minimal example",
+        "minimal-example"
+      ],
+      "description": ""
+    },
+    {
+      "id": "code_walkthrough",
+      "label": "code_walkthrough",
+      "aliases": [
+        "code_walkthrough",
+        "Code_Walkthrough",
+        "code walkthrough",
+        "code-walkthrough"
+      ],
+      "description": ""
+    },
+    {
+      "id": "ai_orchestration_service",
+      "label": "ai_orchestration_service",
+      "aliases": [
+        "ai_orchestration_service",
+        "Ai_Orchestration_Service",
+        "ai orchestration service",
+        "ai-orchestration-service"
+      ],
+      "description": ""
+    },
+    {
+      "id": "request_setup",
+      "label": "request_setup",
+      "aliases": [
+        "request_setup",
+        "Request_Setup",
+        "request setup",
+        "request-setup"
+      ],
+      "description": ""
+    },
+    {
+      "id": "send_request",
+      "label": "send_request",
+      "aliases": [
+        "send_request",
+        "Send_Request",
+        "send request",
+        "send-request"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompt_1",
+      "label": "prompt_1",
+      "aliases": ["prompt_1", "Prompt_1", "prompt 1", "prompt-1"],
+      "description": ""
+    },
+    {
+      "id": "function_call",
+      "label": "function-call",
+      "aliases": ["function-call", "Function-Call", "function call"],
+      "description": ""
+    },
+    {
+      "id": "hvac_message",
+      "label": "HVAC message",
+      "aliases": [
+        "HVAC message",
+        "hvac message",
+        "Hvac Message",
+        "hvac-message"
+      ],
+      "description": ""
+    },
+    {
+      "id": "assigned_values",
+      "label": "assigned values",
+      "aliases": ["assigned values", "Assigned Values", "assigned-values"],
+      "description": ""
+    },
+    {
+      "id": "format_validation",
+      "label": "format validation",
+      "aliases": [
+        "format validation",
+        "Format Validation",
+        "format-validation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "partial",
+      "label": "partial",
+      "aliases": ["partial", "Partial"],
+      "description": ""
+    },
+    {
+      "id": "customer_support_messages",
+      "label": "customer_support_messages",
+      "aliases": [
+        "customer_support_messages",
+        "Customer_Support_Messages",
+        "customer support messages",
+        "customer-support-messages"
+      ],
+      "description": ""
+    },
+    {
+      "id": "dataset_aggregation",
+      "label": "dataset_aggregation",
+      "aliases": [
+        "dataset_aggregation",
+        "Dataset_Aggregation",
+        "dataset aggregation",
+        "dataset-aggregation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "tqdm_progress",
+      "label": "tqdm_progress",
+      "aliases": [
+        "tqdm_progress",
+        "Tqdm_Progress",
+        "tqdm progress",
+        "tqdm-progress"
+      ],
+      "description": ""
+    },
+    {
+      "id": "progress_bar",
+      "label": "progress_bar",
+      "aliases": [
+        "progress_bar",
+        "Progress_Bar",
+        "progress bar",
+        "progress-bar"
+      ],
+      "description": ""
+    },
+    {
+      "id": "pretty_print_table",
+      "label": "pretty_print_table",
+      "aliases": [
+        "pretty_print_table",
+        "Pretty_Print_Table",
+        "pretty print table",
+        "pretty-print-table"
+      ],
+      "description": ""
+    },
+    {
+      "id": "example_driven_prompting",
+      "label": "example-driven prompting",
+      "aliases": [
+        "example-driven prompting",
+        "Example-Driven Prompting",
+        "example driven prompting",
+        "example-driven-prompting"
+      ],
+      "description": ""
+    },
+    {
+      "id": "baseline_comparison",
+      "label": "baseline comparison",
+      "aliases": [
+        "baseline comparison",
+        "Baseline Comparison",
+        "baseline-comparison"
+      ],
+      "description": ""
+    },
+    {
+      "id": "templates",
+      "label": "templates",
+      "aliases": ["templates", "Templates"],
+      "description": ""
+    },
+    {
+      "id": "metaprompting",
+      "label": "metaprompting",
+      "aliases": ["metaprompting", "Metaprompting"],
+      "description": ""
+    },
+    {
+      "id": "template_prompt",
+      "label": "template_prompt",
+      "aliases": [
+        "template_prompt",
+        "Template_Prompt",
+        "template prompt",
+        "template-prompt"
+      ],
+      "description": ""
+    },
+    {
+      "id": "guide_storage",
+      "label": "guide_storage",
+      "aliases": [
+        "guide_storage",
+        "Guide_Storage",
+        "guide storage",
+        "guide-storage"
+      ],
+      "description": ""
+    },
+    {
+      "id": "step_by_step",
+      "label": "step_by_step",
+      "aliases": [
+        "step_by_step",
+        "Step_By_Step",
+        "step by step",
+        "step-by-step"
+      ],
+      "description": ""
+    },
+    {
+      "id": "urgency_guide",
+      "label": "urgency_guide",
+      "aliases": [
+        "urgency_guide",
+        "Urgency_Guide",
+        "urgency guide",
+        "urgency-guide"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sentiment_guide",
+      "label": "sentiment_guide",
+      "aliases": [
+        "sentiment_guide",
+        "Sentiment_Guide",
+        "sentiment guide",
+        "sentiment-guide"
+      ],
+      "description": ""
+    },
+    {
+      "id": "support_categories",
+      "label": "support_categories",
+      "aliases": [
+        "support_categories",
+        "Support_Categories",
+        "support categories",
+        "support-categories"
+      ],
+      "description": ""
+    },
+    {
+      "id": "message_classification",
+      "label": "message-classification",
+      "aliases": [
+        "message-classification",
+        "Message-Classification",
+        "message classification"
+      ],
+      "description": ""
+    },
+    {
+      "id": "prompt_template",
+      "label": "prompt-template",
+      "aliases": ["prompt-template", "Prompt-Template", "prompt template"],
+      "description": ""
+    },
+    {
+      "id": "evaluation",
+      "label": "evaluation",
+      "aliases": ["evaluation", "Evaluation"],
+      "description": ""
+    },
+    {
+      "id": "foundation_models",
+      "label": "foundation-models",
+      "aliases": [
+        "foundation-models",
+        "Foundation-Models",
+        "foundation models"
+      ],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub",
+      "label": "generative AI hub",
+      "aliases": [
+        "generative AI hub",
+        "generative ai hub",
+        "Generative Ai Hub",
+        "generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_note_3437766",
+      "label": "SAP Note 3437766",
+      "aliases": [
+        "SAP Note 3437766",
+        "sap note 3437766",
+        "Sap Note 3437766",
+        "sap-note-3437766"
+      ],
+      "description": ""
+    },
+    {
+      "id": "facility_solutions",
+      "label": "facility_solutions",
+      "aliases": [
+        "facility_solutions",
+        "Facility_Solutions",
+        "facility solutions",
+        "facility-solutions"
+      ],
+      "description": ""
+    },
+    {
+      "id": "gemini_1_5_flash",
+      "label": "gemini-1.5-flash",
+      "aliases": [
+        "gemini-1.5-flash",
+        "Gemini-1.5-Flash",
+        "gemini 1 5 flash",
+        "gemini-1-5-flash"
+      ],
+      "description": ""
+    },
+    {
+      "id": "evaluation_results",
+      "label": "evaluation-results",
+      "aliases": [
+        "evaluation-results",
+        "Evaluation-Results",
+        "evaluation results"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sdk",
+      "label": "SDK",
+      "aliases": ["SDK", "sdk", "Sdk"],
+      "description": ""
+    },
+    {
+      "id": "orchestration",
+      "label": "orchestration",
+      "aliases": ["orchestration", "Orchestration"],
+      "description": ""
+    },
+    {
+      "id": "prompt_evaluation",
+      "label": "prompt evaluation",
+      "aliases": [
+        "prompt evaluation",
+        "Prompt Evaluation",
+        "prompt-evaluation"
+      ],
+      "description": ""
+    },
+    {
+      "id": "recap",
+      "label": "recap",
+      "aliases": ["recap", "Recap"],
+      "description": ""
+    },
+    {
+      "id": "bridge_to_grounding",
+      "label": "bridge to grounding",
+      "aliases": [
+        "bridge to grounding",
+        "Bridge To Grounding",
+        "bridge-to-grounding"
+      ],
+      "description": ""
+    },
+    {
+      "id": "model_selection",
+      "label": "model selection",
+      "aliases": ["model selection", "Model Selection", "model-selection"],
+      "description": ""
+    },
+    {
+      "id": "business_scenarios",
+      "label": "business-scenarios",
+      "aliases": [
+        "business-scenarios",
+        "Business-Scenarios",
+        "business scenarios"
+      ],
+      "description": ""
+    },
+    {
+      "id": "efficient_deployment",
+      "label": "efficient-deployment",
+      "aliases": [
+        "efficient-deployment",
+        "Efficient-Deployment",
+        "efficient deployment"
+      ],
+      "description": ""
+    },
+    {
+      "id": "finance",
+      "label": "finance",
+      "aliases": ["finance", "Finance"],
+      "description": ""
+    },
+    {
+      "id": "logistics",
+      "label": "logistics",
+      "aliases": ["logistics", "Logistics"],
+      "description": ""
+    },
+    {
+      "id": "grounding",
+      "label": "grounding",
+      "aliases": ["grounding", "Grounding"],
+      "description": ""
+    },
+    {
+      "id": "orchestration_service",
+      "label": "orchestration-service",
+      "aliases": [
+        "orchestration-service",
+        "Orchestration-Service",
+        "orchestration service"
+      ],
+      "description": ""
+    },
+    {
+      "id": "email_categorization",
+      "label": "email_categorization",
+      "aliases": [
+        "email_categorization",
+        "Email_Categorization",
+        "email categorization",
+        "email-categorization"
+      ],
+      "description": ""
+    },
+    {
+      "id": "maintenance_issues",
+      "label": "maintenance_issues",
+      "aliases": [
+        "maintenance_issues",
+        "Maintenance_Issues",
+        "maintenance issues",
+        "maintenance-issues"
+      ],
+      "description": ""
+    },
+    {
+      "id": "data_privacy",
+      "label": "data_privacy",
+      "aliases": [
+        "data_privacy",
+        "Data_Privacy",
+        "data privacy",
+        "data-privacy"
+      ],
+      "description": ""
+    },
+    {
+      "id": "workflow_integration",
+      "label": "workflow integration",
+      "aliases": [
+        "workflow integration",
+        "Workflow Integration",
+        "workflow-integration"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_generative_ai_hub",
+      "label": "sap_generative_ai_hub",
+      "aliases": [
+        "sap_generative_ai_hub",
+        "Sap_Generative_Ai_Hub",
+        "sap generative ai hub",
+        "sap-generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "orchestration_service",
+      "label": "orchestration_service",
+      "aliases": [
+        "orchestration_service",
+        "Orchestration_Service",
+        "orchestration service",
+        "orchestration-service"
+      ],
+      "description": ""
+    },
+    {
+      "id": "workflow_editor",
+      "label": "workflow_editor",
+      "aliases": [
+        "workflow_editor",
+        "Workflow_Editor",
+        "workflow editor",
+        "workflow-editor"
+      ],
+      "description": ""
+    },
+    {
+      "id": "dashboard",
+      "label": "dashboard",
+      "aliases": ["dashboard", "Dashboard"],
+      "description": ""
+    },
+    {
+      "id": "updates",
+      "label": "updates",
+      "aliases": ["updates", "Updates"],
+      "description": ""
+    },
+    {
+      "id": "references",
+      "label": "references",
+      "aliases": ["references", "References"],
+      "description": ""
+    },
+    {
+      "id": "sap_hana_cloud",
+      "label": "SAP_HANA_Cloud",
+      "aliases": [
+        "SAP_HANA_Cloud",
+        "sap_hana_cloud",
+        "Sap_Hana_Cloud",
+        "sap hana cloud",
+        "sap-hana-cloud"
+      ],
+      "description": ""
+    },
+    {
+      "id": "hana_cloud",
+      "label": "HANA Cloud",
+      "aliases": ["HANA Cloud", "hana cloud", "Hana Cloud", "hana-cloud"],
+      "description": ""
+    },
+    {
+      "id": "semantic_search",
+      "label": "semantic search",
+      "aliases": ["semantic search", "Semantic Search", "semantic-search"],
+      "description": ""
+    },
+    {
+      "id": "vector_analysis",
+      "label": "vector analysis",
+      "aliases": ["vector analysis", "Vector Analysis", "vector-analysis"],
+      "description": ""
+    },
+    {
+      "id": "sap_hana",
+      "label": "SAP_HANA",
+      "aliases": ["SAP_HANA", "sap_hana", "Sap_Hana", "sap hana", "sap-hana"],
+      "description": ""
+    },
+    {
+      "id": "generative_ai_hub",
+      "label": "Generative_AI_Hub",
+      "aliases": [
+        "Generative_AI_Hub",
+        "generative_ai_hub",
+        "Generative_Ai_Hub",
+        "generative ai hub",
+        "generative-ai-hub"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_ai_launchpad",
+      "label": "SAP_AI_Launchpad",
+      "aliases": [
+        "SAP_AI_Launchpad",
+        "sap_ai_launchpad",
+        "Sap_Ai_Launchpad",
+        "sap ai launchpad",
+        "sap-ai-launchpad"
+      ],
+      "description": ""
+    },
+    {
+      "id": "option_1",
+      "label": "Option_1",
+      "aliases": ["Option_1", "option_1", "option 1", "option-1"],
+      "description": ""
+    },
+    {
+      "id": "administrative_setup",
+      "label": "administrative_setup",
+      "aliases": [
+        "administrative_setup",
+        "Administrative_Setup",
+        "administrative setup",
+        "administrative-setup"
+      ],
+      "description": ""
+    },
+    {
+      "id": "code_run_result",
+      "label": "code_run_result",
+      "aliases": [
+        "code_run_result",
+        "Code_Run_Result",
+        "code run result",
+        "code-run-result"
+      ],
+      "description": ""
+    },
+    {
+      "id": "customer_issues",
+      "label": "customer_issues",
+      "aliases": [
+        "customer_issues",
+        "Customer_Issues",
+        "customer issues",
+        "customer-issues"
+      ],
+      "description": ""
+    },
+    {
+      "id": "sap_hana_cloud_vector_engine",
+      "label": "SAP HANA Cloud vector engine",
+      "aliases": [
+        "SAP HANA Cloud vector engine",
+        "sap hana cloud vector engine",
+        "Sap Hana Cloud Vector Engine",
+        "sap-hana-cloud-vector-engine"
+      ],
+      "description": ""
+    }
+  ]
+}

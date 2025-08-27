@@ -2,7 +2,7 @@
 
 import time
 from pathlib import Path
-from typing import List, Tuple
+from typing import Optional
 from openai import OpenAI
 from config import OPENAI_API_KEY, BATCH_COMPLETION_WINDOW
 
@@ -53,7 +53,7 @@ def _download_file(file_id: str, out_path: Path):
     out_path.write_text(content, encoding="utf-8")
     return out_path
 
-def download_output_or_error(batch_obj, out_path: Path, err_path: Path | None = None):
+def download_output_or_error(batch_obj, out_path: Path, err_path: Optional[Path] = None):
     """
     If output_file_id exists, write it to out_path and return ("output", path).
     Else if error_file_id exists, write it to err_path (or out_path.with_suffix('.errors.jsonl')) and return ("error", path).

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from chunking import read_text, char_chunks, chunk_preview
 from topic_map import save_topicmap_batch_input
-from build_batch import build_questions_requests_balanced, write_jsonl
+from build_batch import build_questions_requests_balanced
 from run_batch import submit_batch, wait_for_batch, download_output_or_error
 from assemble import parse_batch_output, extract_questions, validate_and_fix, write_final
 from taxonomy import build_taxonomy, write_taxonomy
@@ -14,6 +14,7 @@ from config import (
     BATCH_QUESTIONS_SHARD_SIZE,
     BATCH_QUESTIONS_MAX_BYTES,
 )
+from typing import List, Dict
 
 DATA = Path("data")
 DATA.mkdir(exist_ok=True)
@@ -21,7 +22,6 @@ DATA.mkdir(exist_ok=True)
 SOURCE = DATA / "source.txt"
 TOPIC_IN = DATA / "topicmap_input.jsonl"
 TOPIC_OUT = DATA / "topicmap_output.jsonl"
-Q_IN = DATA / "questions_input.jsonl"           # (combined plan file, not used after sharding)
 Q_OUT = DATA / "questions_output.jsonl"         # combined outputs across shards
 FINAL = DATA / "questions_final.json"
 TAXONOMY = DATA / "taxonomy.json"
@@ -59,12 +59,14 @@ def _inspect_output_jsonl(path: Path):
                 rid = obj.get("id") or obj.get("custom_id")
                 resp = obj.get("response", {}) or {}
                 status_code = resp.get("status_code") or resp.get("status")
-                has_output_text = bool(resp.get("output_text")) if isinstance(resp, dict) else False
-                has_output_list = isinstance(resp.get("output"), list) if isinstance(resp, dict) else False
                 err = obj.get("error")
 
+                # Drill into body for outputs (this matches how parse_batch_output reads it)
                 body = resp.get("body", {}) if isinstance(resp, dict) else {}
+                has_output_text = bool(body.get("output_text"))
                 body_output = body.get("output", []) if isinstance(body, dict) else []
+                has_output_list = isinstance(body_output, list)
+
                 kinds = []
                 if isinstance(body_output, list):
                     for it in body_output:
@@ -162,11 +164,12 @@ def run_topicmap_batch(chunks):
     return topic_map
 
 
-def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> list[list]:
+def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> List[List[dict]]:
     if max_per_shard <= 0:
         return [requests]
-    shards = []
-    cur, cur_bytes = [], 0
+    shards: List[List[dict]] = []
+    cur: List[dict] = []
+    cur_bytes = 0
     for req in requests:
         s = (json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8")
         if (len(cur) >= max_per_shard) or (max_bytes and cur_bytes + len(s) > max_bytes):
@@ -217,6 +220,7 @@ def run_questions_batch(topic_map, chunks):
                     print(f"[Questions ERROR][Shard {si}] Error JSONL saved to {path}")
                     _print_file_head(path, 60)
                     _inspect_output_jsonl(path)
+                    _summarize_error_jsonl(path) 
             except Exception as e:
                 print(f"[Questions][Shard {si}] Failed without output/error file: {e}")
             raise RuntimeError(f"Questions batch shard {si} status: {st.status}")
@@ -226,6 +230,7 @@ def run_questions_batch(topic_map, chunks):
             print(f"[Questions ERROR][Shard {si}] Error JSONL saved to {path}")
             _print_file_head(path, 60)
             _inspect_output_jsonl(path)
+            _summarize_error_jsonl(path)
             raise RuntimeError(f"Questions batch shard {si} returned errors (no output).")
 
         print(f"[Questions][Shard {si}] Output JSONL saved to {path}")
@@ -253,6 +258,39 @@ def run_questions_batch(topic_map, chunks):
     tax = build_taxonomy(topic_map, fixed)
     write_taxonomy(tax, TAXONOMY)
     print(f"[Taxonomy] Wrote taxonomy → {TAXONOMY}")
+
+
+def _summarize_error_jsonl(err_path: Path, max_lines: int = 10):
+    if not err_path.exists():
+        print(f"[errors] (no file) {err_path}")
+        return
+    print(f"[errors] Summary for {err_path}:")
+    counts = {}
+    samples = []
+    with err_path.open("r", encoding="utf-8") as f:
+        for i, line in enumerate(f, start=1):
+            try:
+                obj = json.loads(line)
+            except Exception:
+                continue
+            rid = obj.get("custom_id")
+            body = ((obj.get("response") or {}).get("body") or {})
+            err = (body.get("error") or {})
+            msg = err.get("message") or ""
+            code = err.get("code") or ""
+            param = err.get("param") or ""
+            key = (code, param, msg)
+            counts[key] = counts.get(key, 0) + 1
+            if len(samples) < max_lines:
+                samples.append((rid, code, param, msg))
+    # Print a compact histogram
+    for (code, param, msg), n in sorted(counts.items(), key=lambda x: -x[1]):
+        print(f"  [{n}x] code={code or '-'} param={param or '-'} msg={msg[:160]}")
+    # Show a few first examples
+    if samples:
+        print("  First few examples:")
+        for rid, code, param, msg in samples:
+            print(f"    custom_id={rid} code={code or '-'} param={param or '-'} msg={msg[:200]}")
 
 
 if __name__ == "__main__":

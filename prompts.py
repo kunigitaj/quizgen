@@ -39,6 +39,7 @@ CHUNKS PREVIEW:
 Return ONLY the JSON object described by the system message (no extra text)."""
 
 # Keep your compact shape as a schema anchor:
+# (Show 5 options A–E to bias MCQ/MSQ generations to five choices.)
 SCHEMA_ITEM_SHAPE = {
   "id": "q_XXXX",
   "type": "mcq|msq|tf",
@@ -50,6 +51,12 @@ SCHEMA_ITEM_SHAPE = {
     {"id":"A","text_rich":[{"type":"paragraph","children":[{"text":"..."}]}], "is_correct": True,
      "rationale_rich":[{"type":"paragraph","children":[{"text":"..."}]}]},
     {"id":"B","text_rich":[{"type":"paragraph","children":[{"text":"..."}]}], "is_correct": False,
+     "rationale_rich":[{"type":"paragraph","children":[{"text":"..."}]}]},
+    {"id":"C","text_rich":[{"type":"paragraph","children":[{"text":"..."}]}], "is_correct": False,
+     "rationale_rich":[{"type":"paragraph","children":[{"text":"..."}]}]},
+    {"id":"D","text_rich":[{"type":"paragraph","children":[{"text":"..."}]}], "is_correct": False,
+     "rationale_rich":[{"type":"paragraph","children":[{"text":"..."}]}]},
+    {"id":"E","text_rich":[{"type":"paragraph","children":[{"text":"..."}]}], "is_correct": False,
      "rationale_rich":[{"type":"paragraph","children":[{"text":"..."}]}]}
   ],
   "difficulty": 2,
@@ -78,8 +85,12 @@ TYPE_EXAMPLES = {
        "rationale_rich":[{"type":"paragraph","children":[{"text":"Facet 1 is supported by the text."}]}]},
       {"id":"B","text_rich":[{"type":"paragraph","children":[{"text":"Correct facet 2"}]}],"is_correct":True,
        "rationale_rich":[{"type":"paragraph","children":[{"text":"Facet 2 is also supported by the text."}]}]},
-      {"id":"C","text_rich":[{"type":"paragraph","children":[{"text":"Distractor unrelated"}]}],"is_correct":False,
-       "rationale_rich":[{"type":"paragraph","children":[{"text":"This is not stated or conflicts with the text."}]}]}
+      {"id":"C","text_rich":[{"type":"paragraph","children":[{"text":"Plausible but incorrect"}]}],"is_correct":False,
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Conflicts with or is absent from the text."}]}]},
+      {"id":"D","text_rich":[{"type":"paragraph","children":[{"text":"Irrelevant distractor"}]}],"is_correct":False,
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Irrelevant to the concept."}]}]},
+      {"id":"E","text_rich":[{"type":"paragraph","children":[{"text":"Overgeneralized claim"}]}],"is_correct":False,
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Too broad; not supported by the text."}]}]}
     ],
     "difficulty":2,
     "tags":["example","msq"],
@@ -90,9 +101,8 @@ TYPE_EXAMPLES = {
       {"type":"callout","variant":"tip","children":[{"type":"paragraph","children":[{"text":"Multiple correct facets may be present."}]}]}
     ],
     "mnemonic_rich":[{"type":"paragraph","children":[{"text":"Remember: multiple truths can coexist."}]}],
-    "explanation_rich":[{"type":"paragraph","children":[{"text":"The concept includes facets 1 and 2; the distractor is absent from the text."}]}],
-    "elaboration_prompts_rich":[
-      {"type":"paragraph","children":[{"text":"Which parts of the text support facet 1?"}]}],
+    "explanation_rich":[{"type":"paragraph","children":[{"text":"The concept includes facets 1 and 2; other options conflict with or are unsupported by the text."}]}],
+    "elaboration_prompts_rich":[{"type":"paragraph","children":[{"text":"Which parts of the text support facet 1?"}]}],
     "shuffle":True,
     "grading":{"mode":"msq","partial_credit":True,"penalty":0,"require_all_correct":False},
     "example_rich":[{"type":"paragraph","children":[{"text":"A scenario where both facets apply."}]}]
@@ -106,11 +116,15 @@ TYPE_EXAMPLES = {
     "context_rich":[{"type":"callout","variant":"info","children":[{"type":"paragraph","children":[{"text":"Neutral context framing without the actual answer."}]}]}],
     "choices":[
       {"id":"A","text_rich":[{"type":"paragraph","children":[{"text":"Correct answer"}]}],"is_correct":True,
-       "rationale_rich":[{"type":"paragraph","children":[{"text":"This directly matches the text."}]}]},
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Directly matches the text."}]}]},
       {"id":"B","text_rich":[{"type":"paragraph","children":[{"text":"Plausible but wrong"}]}],"is_correct":False,
-       "rationale_rich":[{"type":"paragraph","children":[{"text":"This is not supported by the text."}]}]},
-      {"id":"C","text_rich":[{"type":"paragraph","children":[{"text":"Off-topic distractor"}]}],"is_correct":False,
-       "rationale_rich":[{"type":"paragraph","children":[{"text":"Irrelevant to the concept."}]}]}
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Not supported by the text."}]}]},
+      {"id":"C","text_rich":[{"type":"paragraph","children":[{"text":"Common misconception"}]}],"is_correct":False,
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Contradicted by the text."}]}]},
+      {"id":"D","text_rich":[{"type":"paragraph","children":[{"text":"Irrelevant detail"}]}],"is_correct":False,
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Not relevant to the concept."}]}]},
+      {"id":"E","text_rich":[{"type":"paragraph","children":[{"text":"Overly specific edge case"}]}],"is_correct":False,
+       "rationale_rich":[{"type":"paragraph","children":[{"text":"Too narrow; not the best completion."}]}]}
     ],
     "difficulty":1,
     "tags":["example","mcq"],
@@ -155,7 +169,10 @@ Requirements:
 - The question TYPE must match the user instruction (msq, mcq, or tf).
 - Use ONLY the supplied context text; do not invent facts.
 - context_rich MUST be neutral and MUST NOT reveal the answer (no verbatim answer strings).
-- Provide plausible distractors with rationales (for msq/mcq every choice has a rationale).
+- For MCQ/MSQ provide EXACTLY FIVE choices labeled A–E.
+- For MCQ mark EXACTLY ONE option as correct.
+- For MSQ mark TWO to THREE options as correct; the rest must be plausible distractors.
+- Provide a brief rationale for EVERY choice (MSQ/MCQ).
 - Difficulty is 1–3.
 - Fill EVERY field for the question (no empty lists).
 - Use “True” and “False” labels for TF choices.

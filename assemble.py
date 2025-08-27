@@ -11,7 +11,67 @@ from config import MAX_CONTEXT_SCAN_LEN
 
 
 def parse_batch_output(jsonl_path: Path) -> List[Any]:
-    """Parse OpenAI Batch /v1/responses output JSONL assuming text.format={type:'json_object'}."""
+    """
+    Parse OpenAI Batch /v1/responses JSONL.
+
+    Priority:
+      1) body.output[*].content[*].json   (structured blocks)
+      2) body.output_text                 (convenience field when present)
+      3) body.output[*].content[*].text   (fallback; fences allowed)
+
+    Notes:
+    - We parse each content block independently (avoids concatenating multiple JSON objects).
+    - If a block is wrapped in fences or extra prose, we carve out the largest {...} object.
+    """
+
+    def _strip_code_fences(s: str) -> str:
+        s = s.strip()
+        # remove a single leading fence (``` or ```json)
+        if s.startswith("```"):
+            nl = s.find("\n")
+            if nl != -1:
+                s = s[nl + 1 :]
+        # remove a single trailing fence
+        if s.endswith("```"):
+            s = s[:-3]
+        return s.strip()
+
+    def _extract_json_object(s: str) -> str | None:
+        """Return the largest top-level {...} span (tolerates prefix/suffix junk)."""
+        stack = 0
+        start = None
+        best = None
+        for i, ch in enumerate(s):
+            if ch == "{":
+                if stack == 0:
+                    start = i
+                stack += 1
+            elif ch == "}":
+                if stack > 0:
+                    stack -= 1
+                    if stack == 0 and start is not None:
+                        best = s[start : i + 1]  # keep the last (largest) object
+        return best
+
+    def _try_parse_json_string(s: str) -> Any | None:
+        """Try direct JSON parse, then carve largest object."""
+        if not isinstance(s, str) or not s.strip():
+            return None
+        s0 = _strip_code_fences(s)
+        # 1) direct
+        try:
+            return json.loads(s0)
+        except Exception:
+            pass
+        # 2) carved
+        cand = _extract_json_object(s0)
+        if cand:
+            try:
+                return json.loads(cand)
+            except Exception:
+                return None
+        return None
+
     out: List[Any] = []
     if not jsonl_path.exists():
         print(f"[parse_batch_output] File not found: {jsonl_path}")
@@ -22,46 +82,99 @@ def parse_batch_output(jsonl_path: Path) -> List[Any]:
             line = line.strip()
             if not line:
                 continue
+
             try:
                 obj = json.loads(line)
             except Exception as e:
                 print(f"[parse_batch_output] JSON error on line {i}: {e}")
                 continue
 
-            resp = obj.get("response", {})
+            # Responses Batch record shape:
+            # { "custom_id": "...", "response": { "status_code": 200, "body": {...} }, ... }
+            resp = obj.get("response", {}) if isinstance(obj, dict) else {}
             body = resp.get("body", {}) if isinstance(resp, dict) else {}
 
-            txt = body.get("output_text")
-            if not txt:
-                output = body.get("output", [])
-                if isinstance(output, list):
-                    parts = []
-                    for item in output:
-                        if isinstance(item, dict) and item.get("type") == "message":
-                            for c in (item.get("content") or []):
-                                t = c.get("text") if isinstance(c, dict) else None
-                                if isinstance(t, str):
-                                    parts.append(t)
-                    txt = "\n".join(parts) if parts else None
+            parsed_any = False
 
-            if not txt:
-                print(f"[parse_batch_output] No text on line {i}. Keys in body: {list(body.keys())}")
-                continue
+            # --- (1) Structured JSON blocks inside body.output[*].content[*] ---
+            output = body.get("output")
+            if isinstance(output, list):
+                for item in output:
+                    # Be permissive: any item that has "content" list
+                    if isinstance(item, dict):
+                        content = item.get("content")
+                        if isinstance(content, list):
+                            for c in content:
+                                if not isinstance(c, dict):
+                                    continue
+                                ctype = (c.get("type") or "").lower()
 
-            # Trim common code fences defensively
-            s = txt.strip()
-            if s.startswith("```"):
-                s = s[3:]
-                if "\n" in s:
-                    s = s.split("\n", 1)[1]
-                if s.endswith("```"):
-                    s = s[:-3]
-                s = s.strip()
+                                # Known patterns:
+                                # - {"type":"json","json":{...}}
+                                # - {"type":"object","json":{...}}  (rare)
+                                # - {"type":"tool_result","content":[... maybe json/text ...]} (ignore here)
+                                # Prefer explicit JSON payloads first.
+                                if "json" in c and isinstance(c.get("json"), (dict, list)):
+                                    out.append(c["json"])
+                                    parsed_any = True
+                                elif ctype == "json" and isinstance(c.get("data"), (dict, list)):
+                                    # Some SDKs use "data" for JSON payload
+                                    out.append(c["data"])
+                                    parsed_any = True
 
-            try:
-                out.append(json.loads(s))
-            except Exception as e:
-                print(f"[parse_batch_output] Could not parse JSON on line {i}: {e}\nPreview: {s[:400]}...")
+            if parsed_any:
+                continue  # done with this line
+
+            # --- (2) Convenience synthesized text (present when text.format used) ---
+            if isinstance(body.get("output_text"), str) and body["output_text"].strip():
+                js = _try_parse_json_string(body["output_text"])
+                if js is not None:
+                    out.append(js)
+                    continue
+                # If output_text exists but isn't pure JSON, fall through to try content blocks as text.
+
+            # --- (3) Fallback: scan body.output[*].content[*] for text blocks and parse individually ---
+            if isinstance(output, list):
+                found_from_text_blocks = False
+                for item in output:
+                    if isinstance(item, dict):
+                        content = item.get("content")
+                        if isinstance(content, list):
+                            for c in content:
+                                if not isinstance(c, dict):
+                                    continue
+                                # Accept anything that exposes a 'text' field, regardless of c['type']
+                                if isinstance(c.get("text"), str) and c["text"].strip():
+                                    js = _try_parse_json_string(c["text"])
+                                    if js is not None:
+                                        out.append(js)
+                                        found_from_text_blocks = True
+                if found_from_text_blocks:
+                    continue
+
+            # If we reach here, we failed to extract any usable text/JSON for this record.
+            status = (resp or {}).get("status_code") or (resp or {}).get("status")
+            body_keys = list(body.keys()) if isinstance(body, dict) else []
+            err = (body or {}).get("error") if isinstance(body, dict) else None
+
+            # Extra diagnostics: enumerate the content types we saw (if any)
+            content_kinds = []
+            if isinstance(output, list):
+                for item in output:
+                    if isinstance(item, dict) and isinstance(item.get("content"), list):
+                        kinds = []
+                        for c in item["content"]:
+                            if isinstance(c, dict):
+                                kinds.append((c.get("type"), list(c.keys())))
+                        if kinds:
+                            content_kinds.append(kinds)
+
+            print(
+                f"[parse_batch_output] No parseable JSON/text on line {i}. "
+                f"status={status} keys={body_keys} error={err} "
+                f"contentKinds={content_kinds}"
+            )
+
     print(f"[parse_batch_output] Parsed {len(out)} payload(s).")
     return out
 
