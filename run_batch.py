@@ -4,7 +4,15 @@ import time
 from pathlib import Path
 from typing import Optional
 from openai import OpenAI
-from config import OPENAI_API_KEY, BATCH_COMPLETION_WINDOW
+
+from config import (
+    OPENAI_API_KEY,
+    BATCH_COMPLETION_WINDOW,
+    BATCH_POLL_SECONDS,
+    BATCH_TIMEOUT_SECONDS,
+    BATCH_STATUS_LOG_SECONDS,
+    CANCEL_ON_TIMEOUT,
+)
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -20,33 +28,45 @@ def submit_batch(input_jsonl: Path):
 def retrieve_batch(batch_id: str):
     return client.batches.retrieve(batch_id)
 
-def wait_for_batch(batch_id: str, poll_seconds: int = 5, timeout_seconds: int = 3600):
+def cancel_batch(batch_id: str):
+    """Explicit helper to cancel a running batch."""
+    try:
+        client.batches.cancel(batch_id)
+        print(f"[Batch] Sent cancel for {batch_id}.")
+    except Exception as e:
+        print(f"[Batch] Cancel attempt failed for {batch_id}: {e}")
+
+def wait_for_batch(batch_id: str):
     """
-    Poll until the batch hits a terminal state, with a hard timeout.
-    Returns the final batch object if finished; raises on timeout.
+    Poll until the batch hits a terminal state.
+    Honors config:
+      - BATCH_POLL_SECONDS: seconds between polls
+      - BATCH_STATUS_LOG_SECONDS: print status every N seconds
+      - BATCH_TIMEOUT_SECONDS: 0 == wait indefinitely
+      - CANCEL_ON_TIMEOUT: if True and we do time out (>0), attempt server-side cancel
     """
     start = time.time()
     last_log = 0.0
+
     while True:
         st = retrieve_batch(batch_id)
         if st.status in ("completed", "failed", "cancelled", "expired", "cancelling"):
             return st
 
         now = time.time()
-        if now - last_log > 60:
+        if now - last_log > max(5, BATCH_STATUS_LOG_SECONDS):
             rc = getattr(st, "request_counts", None)
             print(f"[Batch] status={st.status} request_counts={rc}")
             last_log = now
 
-        if now - start > timeout_seconds:
-            try:
-                client.batches.cancel(batch_id)
-                print(f"[Batch] Timed out after {timeout_seconds}s. Sent cancel for batch {batch_id}.")
-            except Exception:
-                print(f"[Batch] Timed out after {timeout_seconds}s. Cancel attempt failed or not supported.")
-            raise TimeoutError(f"Batch {batch_id} did not complete within {timeout_seconds}s")
+        # If timeout is 0, wait forever
+        if BATCH_TIMEOUT_SECONDS > 0 and (now - start) > BATCH_TIMEOUT_SECONDS:
+            msg = f"Batch {batch_id} did not complete within {BATCH_TIMEOUT_SECONDS}s"
+            if CANCEL_ON_TIMEOUT:
+                cancel_batch(batch_id)
+            raise TimeoutError(msg)
 
-        time.sleep(poll_seconds)
+        time.sleep(max(1, BATCH_POLL_SECONDS))
 
 def _download_file(file_id: str, out_path: Path):
     content = client.files.content(file_id).read().decode("utf-8")

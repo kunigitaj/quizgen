@@ -10,6 +10,24 @@ from schema_models import Question, QuestionFile
 from config import MAX_CONTEXT_SCAN_LEN
 
 
+# ---------- Prompt mention detection (broad) ----------
+_PROMPT_REF_RE = re.compile(
+    r"""
+    (?:
+        (?:according\s+to|as\s+per|based\s+on|per|referring\s+to|with\s+respect\s+to|
+           in|from)\s+
+        (?:(?:the|this|that|above|below|following|previous|provided|given|attached|supplied|stated)\s+)?
+        (?:prompt|instruction(?:s)?|guideline(?:s)?|spec(?:ification)?s?|directions?|context)
+        \b
+    )
+    |
+    \bthe\s+(?:prompt|instruction(?:s)?|guideline(?:s)?|spec(?:ification)?s?|directions?|context)\s+
+      (?:above|below|provided|given|stated)\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
 def parse_batch_output(jsonl_path: Path) -> List[Any]:
     """
     Parse OpenAI Batch /v1/responses JSONL.
@@ -112,7 +130,6 @@ def parse_batch_output(jsonl_path: Path) -> List[Any]:
                                 # Known patterns:
                                 # - {"type":"json","json":{...}}
                                 # - {"type":"object","json":{...}}  (rare)
-                                # - {"type":"tool_result","content":[... maybe json/text ...]} (ignore here)
                                 # Prefer explicit JSON payloads first.
                                 if "json" in c and isinstance(c.get("json"), (dict, list)):
                                     out.append(c["json"])
@@ -226,6 +243,56 @@ def _gather_text(rich_list):
     return out
 
 
+def _rich_to_plain_text(rich_list: List[Dict], max_chars: int = 1000) -> str:
+    """Flatten a rich block list to plaintext (soft cap length)."""
+    txt = " ".join(_gather_text(rich_list)).strip()
+    return (txt[:max_chars] + "…") if len(txt) > max_chars else txt
+
+
+def _build_prompt_excerpt_block(excerpt: str) -> Dict:
+    """Build a callout block to embed a short prompt/context excerpt."""
+    if not excerpt:
+        excerpt = "Prompt excerpt unavailable."
+    return {
+        "type": "callout",
+        "variant": "info",
+        "children": [
+            {
+                "type": "paragraph",
+                "children": [{"text": "Prompt (excerpt): " + excerpt}],
+            }
+        ],
+    }
+
+
+def _ensure_prompt_excerpt(item: Dict):
+    """
+    If stem references a 'prompt/instructions/spec/context', inject a concise
+    'Prompt (excerpt)' callout at the START of context_rich (once).
+    """
+    stem = " ".join(_gather_text(item.get("question_rich", [])))
+    if not stem or not _PROMPT_REF_RE.search(stem):
+        return
+
+    ctx = item.get("context_rich") or []
+    # Prevent duplicates
+    ctx_plain = _rich_to_plain_text(ctx, 3000).lower()
+    if "prompt (excerpt):" in ctx_plain:
+        return
+
+    # Use the first ~400 chars from existing context text as the "prompt" excerpt.
+    excerpt = _rich_to_plain_text(ctx, 600)
+    # Try to end excerpt at a sentence boundary
+    cut = max(excerpt.rfind(". "), excerpt.rfind("! "), excerpt.rfind("? "))
+    if cut > 200:
+        excerpt = excerpt[: cut + 1]
+    else:
+        excerpt = excerpt[:400]
+
+    callout = _build_prompt_excerpt_block(excerpt.strip())
+    item["context_rich"] = [callout] + ctx
+
+
 def context_leak_check(question: Dict) -> Tuple[bool, List[str]]:
     leaks: List[str] = []
     context_text = json.dumps(question.get("context_rich", ""))[:MAX_CONTEXT_SCAN_LEN].lower()
@@ -249,61 +316,190 @@ def soften_context(question: Dict):
     question["context_rich"] = json.loads(ctx_json)
 
 
+def _normalize_choices_and_meta(item: Dict):
+    """
+    Normalize per spec:
+    - MCQ/MSQ: exactly A–E choices, ensure rationales
+    - MSQ: 2–3 correct
+    - MCQ: exactly 1 correct
+    - TF: keep shuffle False
+    - Difficulty: clamp to 1..3 (prompt requirement)
+    - Hints: cap to 3 later
+    """
+    t = (item.get("type") or "").lower()
+
+    # Clamp difficulty 1..3 (schema allows up to 5, but prompt requires 1–3)
+    try:
+        d = int(item.get("difficulty", 2))
+    except Exception:
+        d = 2
+    item["difficulty"] = max(1, min(3, d))
+
+    if t in ("mcq", "msq"):
+        choices = [c for c in (item.get("choices") or []) if isinstance(c, dict)]
+
+        # Ensure exactly 5 choices; pad or trim as needed
+        while len(choices) < 5:
+            nxt = chr(ord("A") + len(choices))
+            choices.append(
+                {
+                    "id": nxt,
+                    "text_rich": [
+                        {"type": "paragraph", "children": [{"text": f"Option {nxt}"}]}
+                    ],
+                    "is_correct": False,
+                    "rationale_rich": [
+                        {
+                            "type": "paragraph",
+                            "children": [
+                                {
+                                    "text": "Placeholder choice added to meet schema."
+                                }
+                            ],
+                        }
+                    ],
+                }
+            )
+        if len(choices) > 5:
+            choices = choices[:5]
+
+        # Relabel to A..E in order and ensure rationales
+        for i, c in enumerate(choices[:5]):
+            c["id"] = chr(ord("A") + i)
+            if c.get("rationale_rich") in (None, [], ""):
+                c["rationale_rich"] = [
+                    {
+                        "type": "paragraph",
+                        "children": [
+                            {
+                                "text": "This option is (in)correct based on the supplied context."
+                            }
+                        ],
+                    }
+                ]
+
+        # MSQ: ensure 2–3 correct
+        if t == "msq":
+            correct_idx = [i for i, c in enumerate(choices) if c.get("is_correct")]
+            if len(correct_idx) < 2:
+                for i, c in enumerate(choices):
+                    if not c.get("is_correct"):
+                        c["is_correct"] = True
+                        correct_idx.append(i)
+                        if len(correct_idx) >= 2:
+                            break
+            if len(correct_idx) > 3:
+                for i in correct_idx[3:]:
+                    choices[i]["is_correct"] = False
+
+        # MCQ: ensure exactly 1 correct
+        if t == "mcq":
+            correct_idx = [i for i, c in enumerate(choices) if c.get("is_correct")]
+            if not correct_idx:
+                choices[0]["is_correct"] = True
+            elif len(correct_idx) > 1:
+                for i in correct_idx[1:]:
+                    choices[i]["is_correct"] = False
+
+        item["choices"] = choices
+
+    if t == "tf":
+        # Keep canonical order and no shuffling for TF
+        item["shuffle"] = False
+
+
 def validate_and_fix(items: List[Dict]) -> List[Dict]:
     fixed: List[Dict] = []
     ensure_ids_unique(items)
     for it in items:
         if it.get("type") == "msq":
-            it.setdefault("grading", {
-                "mode": "msq",
-                "partial_credit": True,
-                "penalty": 0,
-                "require_all_correct": False
-            })
+            it.setdefault(
+                "grading",
+                {
+                    "mode": "msq",
+                    "partial_credit": True,
+                    "penalty": 0,
+                    "require_all_correct": False,
+                },
+            )
         elif it.get("type") in ("mcq", "tf"):
-            it.setdefault("grading", {
-                "mode": "mcq",
-                "partial_credit": False,
-                "penalty": 0,
-                "require_all_correct": False
-            })
+            it.setdefault(
+                "grading",
+                {
+                    "mode": "mcq",
+                    "partial_credit": False,
+                    "penalty": 0,
+                    "require_all_correct": False,
+                },
+            )
 
         it.setdefault("shuffle", True)
+
+        # Insert "Prompt (excerpt)" if the stem references prompt/spec/instructions/context
+        _ensure_prompt_excerpt(it)
+
+        # Then soften to prevent leaks (covers excerpt too)
         soften_context(it)
 
+        # Normalize per-type constraints
+        _normalize_choices_and_meta(it)
+
+        # Keep TF wording canonical
         if it.get("type") == "tf":
             for c in it.get("choices", []):
                 txts = _gather_text(c.get("text_rich", []))
                 joined = " ".join(txts).strip().lower()
                 if "true" in joined:
-                    c["text_rich"] = [{"type": "paragraph", "children": [{"text": "True"}]}]
+                    c["text_rich"] = [
+                        {"type": "paragraph", "children": [{"text": "True"}]}
+                    ]
                 elif "false" in joined:
-                    c["text_rich"] = [{"type": "paragraph", "children": [{"text": "False"}]}]
-
-        if it.get("type") in ("mcq", "msq"):
-            for c in it.get("choices", []):
-                if c.get("rationale_rich") in (None, [], ""):
-                    c["rationale_rich"] = [
-                        {"type": "paragraph", "children": [{"text": "This option is (in)correct based on the supplied context."}]}
+                    c["text_rich"] = [
+                        {"type": "paragraph", "children": [{"text": "False"}]}
                     ]
 
-        # Ensure at least 2 hints
+        # Ensure 2–3 hints (cap at 3)
         hints = it.get("hints_rich") or []
         if len(hints) < 2:
             default_tips = [
-                {"type": "callout", "variant": "tip",
-                 "children": [{"type": "paragraph", "children": [{"text": "Re-read the context and focus on key terms."}]}]},
-                {"type": "callout", "variant": "tip",
-                 "children": [{"type": "paragraph", "children": [{"text": "Eliminate distractors that contradict definitions in the text."}]}]}
+                {
+                    "type": "callout",
+                    "variant": "tip",
+                    "children": [
+                        {
+                            "type": "paragraph",
+                            "children": [
+                                {"text": "Re-read the context and focus on key terms."}
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "type": "callout",
+                    "variant": "tip",
+                    "children": [
+                        {
+                            "type": "paragraph",
+                            "children": [
+                                {
+                                    "text": "Eliminate distractors that contradict definitions in the text."
+                                }
+                            ],
+                        }
+                    ],
+                },
             ]
             hints = (hints + default_tips)[:2]
-            it["hints_rich"] = hints
+        it["hints_rich"] = hints[:3]
 
         try:
             Question(**it)
             fixed.append(it)
         except Exception as e:
-            print(f"[validate_and_fix] Dropping invalid item (reason: {e}). Item preview: {json.dumps(it)[:300]}...")
+            print(
+                f"[validate_and_fix] Dropping invalid item (reason: {e}). "
+                f"Item preview: {json.dumps(it)[:300]}..."
+            )
             continue
 
     print(f"[validate_and_fix] Final valid questions: {len(fixed)}")

@@ -2,29 +2,51 @@
 
 import json
 from pathlib import Path
+import shutil
+import argparse
 
 from chunking import read_text, char_chunks, chunk_preview
 from topic_map import save_topicmap_batch_input
 from build_batch import build_questions_requests_balanced
-from run_batch import submit_batch, wait_for_batch, download_output_or_error
+from run_batch import submit_batch, wait_for_batch, download_output_or_error, cancel_batch
 from assemble import parse_batch_output, extract_questions, validate_and_fix, write_final
 from taxonomy import build_taxonomy, write_taxonomy
 from config import (
     MAX_CHARS, OVERLAP,
     BATCH_QUESTIONS_SHARD_SIZE,
     BATCH_QUESTIONS_MAX_BYTES,
+    CANCEL_ON_TIMEOUT,   # used for Ctrl-C behavior
 )
-from typing import List, Dict
+from typing import List
 
 DATA = Path("data")
-DATA.mkdir(exist_ok=True)
+DATA.mkdir(parents=True, exist_ok=True)
 
 SOURCE = DATA / "source.txt"
 TOPIC_IN = DATA / "topicmap_input.jsonl"
 TOPIC_OUT = DATA / "topicmap_output.jsonl"
-Q_OUT = DATA / "questions_output.jsonl"         # combined outputs across shards
+Q_OUT = DATA / "questions_output.jsonl"
 FINAL = DATA / "questions_final.json"
 TAXONOMY = DATA / "taxonomy.json"
+
+
+def clean_data_dir():
+    kept = {"source.txt", ".gitkeep", ".DS_Store"}
+    removed = 0
+    for f in DATA.iterdir():
+        if f.name in kept:
+            continue
+        try:
+            if f.is_symlink():
+                f.unlink(missing_ok=True)
+            elif f.is_file():
+                f.unlink(missing_ok=True)
+            elif f.is_dir():
+                shutil.rmtree(f)
+            removed += 1
+        except Exception as e:
+            print(f"[Cleanup] Could not remove {f}: {e}")
+    print(f"[Cleanup] Removed {removed} item(s).")
 
 
 def _print_file_head(path: Path, lines: int = 60):
@@ -118,7 +140,14 @@ def run_topicmap_batch(chunks):
     batch_id = submit_batch(TOPIC_IN)
     print(f"[TopicMap] Submitted batch id={batch_id}. Waiting for completion...")
 
-    st = wait_for_batch(batch_id, poll_seconds=5)
+    try:
+        st = wait_for_batch(batch_id)
+    except KeyboardInterrupt:
+        if CANCEL_ON_TIMEOUT:
+            cancel_batch(batch_id)
+        print("[TopicMap] Interrupted by user.")
+        raise
+
     print(f"[TopicMap] Batch status: {st.status}")
 
     if st.status != "completed":
@@ -182,10 +211,76 @@ def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> List[
     return shards
 
 
+def _extract_question_type(req):
+    """
+    Best-effort extractor that tolerates dict/list 'body' shapes without raising.
+    Returns a string like 'mcq'/'msq'/'tf' or None if not found.
+    """
+    try:
+        b = req.get("body")
+        # Common case: body is a dict with 'input'
+        if isinstance(b, dict):
+            inp = b.get("input")
+            if isinstance(inp, dict):
+                qt = inp.get("question_type")
+                if isinstance(qt, str):
+                    return qt
+            # Sometimes the input is inside a messages-like array
+            msgs = b.get("messages") or b.get("input_messages")
+            if isinstance(msgs, list):
+                for m in msgs:
+                    if isinstance(m, dict):
+                        inp2 = m.get("input")
+                        if isinstance(inp2, dict):
+                            qt = inp2.get("question_type")
+                            if isinstance(qt, str):
+                                return qt
+        # Alternate case: body is a list of items, each may carry 'input'
+        elif isinstance(b, list):
+            for item in b:
+                if isinstance(item, dict):
+                    inp = item.get("input")
+                    if isinstance(inp, dict):
+                        qt = inp.get("question_type")
+                        if isinstance(qt, str):
+                            return qt
+        # Fallback: occasionally 'input' may be top-level
+        inp_top = req.get("input")
+        if isinstance(inp_top, dict):
+            qt = inp_top.get("question_type")
+            if isinstance(qt, str):
+                return qt
+    except Exception:
+        pass
+    return None
+
+
 def run_questions_batch(topic_map, chunks):
     # Plan all requests (not written as a single giant JSONL anymore)
     reqs = build_questions_requests_balanced(topic_map, chunks)
     print(f"[Questions] Planned {len(reqs)} requests")
+
+    # --- Summarize question mix (safe) ---
+    from collections import Counter
+    qtypes = [qt for qt in (_extract_question_type(r) for r in reqs) if qt]
+    mix = Counter(qtypes)
+    unknown = len(reqs) - len(qtypes)
+
+    # Pretty-print sorted mix
+    print(f"[Questions] Planned by type: {dict(sorted(mix.items()))}  (total={len(reqs)}, unknown_shapes={unknown})")
+
+    # Sanity check: topic count
+    expected_per_topic = len([t for u in topic_map.get("units", []) for t in u.get("topics", [])])
+    print(f"[Questions] Topics detected: {expected_per_topic}")
+
+    from config import QUESTION_TYPES_PER_TOPIC, QUESTION_TYPE_MULTIPLIER
+
+    expected_total = expected_per_topic * len(QUESTION_TYPES_PER_TOPIC) * QUESTION_TYPE_MULTIPLIER
+    print(f"[Questions] Expected requests (topics × types × multiplier): "
+        f"{expected_per_topic} × {len(QUESTION_TYPES_PER_TOPIC)} × {QUESTION_TYPE_MULTIPLIER} = {expected_total}")
+    if expected_total != len(reqs):
+        print(f"[Questions][warn] Planned count {len(reqs)} ≠ expected {expected_total}")
+    # -------------------------------------
 
     shards = _shard_requests(reqs, BATCH_QUESTIONS_SHARD_SIZE, BATCH_QUESTIONS_MAX_BYTES)
     print(f"[Questions] Submitting in {len(shards)} shard(s) "
@@ -210,7 +305,15 @@ def run_questions_batch(topic_map, chunks):
 
         batch_id = submit_batch(shard_in)
         print(f"[Questions][Shard {si}] Submitted batch id={batch_id}. Waiting for completion...")
-        st = wait_for_batch(batch_id, poll_seconds=5)
+
+        try:
+            st = wait_for_batch(batch_id)
+        except KeyboardInterrupt:
+            if CANCEL_ON_TIMEOUT:
+                cancel_batch(batch_id)
+            print(f"[Questions][Shard {si}] Interrupted by user.")
+            raise
+
         print(f"[Questions][Shard {si}] Batch status: {st.status}")
 
         if st.status != "completed":
@@ -220,7 +323,7 @@ def run_questions_batch(topic_map, chunks):
                     print(f"[Questions ERROR][Shard {si}] Error JSONL saved to {path}")
                     _print_file_head(path, 60)
                     _inspect_output_jsonl(path)
-                    _summarize_error_jsonl(path) 
+                    _summarize_error_jsonl(path)
             except Exception as e:
                 print(f"[Questions][Shard {si}] Failed without output/error file: {e}")
             raise RuntimeError(f"Questions batch shard {si} status: {st.status}")
@@ -292,8 +395,20 @@ def _summarize_error_jsonl(err_path: Path, max_lines: int = 10):
         for rid, code, param, msg in samples:
             print(f"    custom_id={rid} code={code or '-'} param={param or '-'} msg={msg[:200]}")
 
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run topic map + question batch pipeline")
+    parser.add_argument(
+        "--no-clean",
+        action="store_true",
+        help="Skip cleaning the data directory before run",
+    )
+    args = parser.parse_args()
+
+    if not args.no_clean:
+        clean_data_dir()
+    else:
+        print("[Main] Skipping cleanup (per --no-clean)")
+
     print(f"[Main] Using source: {SOURCE}")
     if not SOURCE.exists():
         raise SystemExit(f"[Main] Missing source file: {SOURCE}. Put your 3,000-line text at this path.")

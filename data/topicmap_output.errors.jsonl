@@ -1,1 +1,0 @@
-{"id": "batch_req_68ae3f2df98c81908180626c28786829", "custom_id": "topicmap_0001", "response": {"status_code": 400, "request_id": "7b4fc8da0b244f35e13e8c3ff73a7005", "body": {"error": {"message": "Unsupported parameter: 'temperature' is not supported with this model.", "type": "invalid_request_error", "param": "temperature", "code": null}}}, "error": null}
