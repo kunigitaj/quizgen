@@ -346,9 +346,34 @@ def _normalize_choices_and_meta(item: Dict):
         item["shuffle"] = False
 
 
+def _enforce_id_convention(items: List[Dict]):
+    """
+    Force IDs to the pattern: q_<topic_id>_<type>_<nn>
+    where nn is 01-based, per (topic_id, type).
+    """
+    counters: Dict[Tuple[str, str], int] = {}
+    for q in items:
+        topic = (q.get("topic_id") or "").strip()
+        qtype = (q.get("type") or "").strip().lower()
+        if not topic or qtype not in {"mcq", "msq", "tf"}:
+            # Fall back to existing id if we can't build one
+            q.setdefault("id", f"q_{uuid.uuid4().hex[:6]}")
+            continue
+        key = (topic, qtype)
+        counters[key] = counters.get(key, 0) + 1
+        seq = counters[key]
+        q["id"] = f"q_{topic}_{qtype}_{seq:02d}"
+
+
 def validate_and_fix(items: List[Dict]) -> List[Dict]:
     fixed: List[Dict] = []
+
+    # First, enforce the canonical ID convention across all items
+    _enforce_id_convention(items)
+
+    # Safety: still guarantee uniqueness if any collisions slip through
     ensure_ids_unique(items)
+
     for it in items:
         if it.get("type") == "msq":
             it.setdefault(

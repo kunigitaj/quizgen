@@ -97,7 +97,8 @@ def build_questions_requests_balanced(topic_map: Dict, chunks: List[str]) -> Lis
                         type_examples=json.dumps(TYPE_EXAMPLES, ensure_ascii=False),
                     )
 
-                    custom_id = f"q_{u}_{t['topic_id']}_{ft}_{seq:02d}"
+                    # Consistent with final question IDs: q_<topic_id>_<type>_<nn>
+                    custom_id = f"q_{t['topic_id']}_{ft}_{seq:02d}"
 
                     body: Dict = {
                         "model": MODEL_QUESTIONS,
