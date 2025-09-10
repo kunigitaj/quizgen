@@ -79,3 +79,7 @@ dmypy.json
 # Others
 *.log
 *shard*.jsonl
+
+data/*.json
+data/*.jsonl
+data/*.txt
