@@ -83,3 +83,5 @@ dmypy.json
 data/*.json
 data/*.jsonl
 data/*.txt
+
+.DS_Store

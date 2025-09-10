@@ -20,11 +20,11 @@ Return ONLY valid JSON with:
 
 HARD CONSTRAINTS (must all be satisfied):
 - You will be given N (total_chunks) and the valid chunk indices 0..N-1 in the user message.
-- The UNION of all topic chunk_span ranges MUST cover EVERY index in 0..N-1 with **no gaps and no overlaps**.
+- The UNION of all topic chunk_span ranges MUST cover EVERY index in 0..N-1 with no gaps and no overlaps.
 - chunk_span uses inclusive integer indices and MUST stay within [0, N-1].
-- If some chunks are minor/boilerplate, still include them in a small topic (e.g., “Misc/Glue”) so nothing is uncovered.
-- Prefer 6–15 topics per unit for a ~3,000-line text; add more units if needed to achieve complete coverage.
-- Titles should be concise and specific.
+- Respect semantic boundaries: headings and ellipsis separators have been preserved in chunking; avoid splitting a topic across unrelated sections.
+- Titles must be concise and specific; prefer 6–15 topics for a ~3,000-line text; add more units if needed.
+- If a chunk contains only boilerplate (e.g., “Objective”, “Note”, “Demo”), roll it into the nearest relevant topic so coverage remains continuous.
 """
 
 TOPIC_MAP_USER = """Create the topic map from these CHUNKS (index + first lines shown).
@@ -32,6 +32,11 @@ TOPIC_MAP_USER = """Create the topic map from these CHUNKS (index + first lines 
 TOTAL_CHUNKS (N): {total_chunks}
 VALID INDICES: 0..{last_index}
 EXPLICIT INDEX LIST: [{all_indices}]
+
+Guidance:
+- These chunks are aligned to lesson/section boundaries using '...' (minor breaks) and '......' (unit ends).
+- Group related chunks into coherent topics; keep each topic's span contiguous.
+- Prefer unit titles like "Unit 1 – Preparing the Modeling Environment" and topic titles like "Getting Started with BAS", "Development Spaces", etc.
 
 CHUNKS PREVIEW:
 {chunks_preview}

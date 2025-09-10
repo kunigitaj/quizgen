@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 import shutil
 import argparse
+import re
 
-from chunking import read_text, char_chunks, chunk_preview
+from chunking import read_text, chunk_preview
 from topic_map import save_topicmap_batch_input
 from build_batch import build_questions_requests_balanced
 from run_batch import submit_batch, wait_for_batch, download_output_or_error, cancel_batch
@@ -28,6 +29,34 @@ TOPIC_OUT = DATA / "topicmap_output.jsonl"
 Q_OUT = DATA / "questions_output.jsonl"
 FINAL = DATA / "questions_final.json"
 TAXONOMY = DATA / "taxonomy.json"
+
+
+# ---------- Redaction helpers ----------
+_ID_KEYS = ("id", "request_id", "output_file_id", "error_file_id", "custom_id")
+
+def _obf(s: str) -> str:
+    """Obfuscate tokens for logs."""
+    if not isinstance(s, str) or not s:
+        return str(s)
+    return "[redacted]"
+
+def _redact_jsonlike_text(s: str) -> str:
+    """
+    Redact common ID-bearing fields in a JSONL preview string before printing.
+    """
+    if not isinstance(s, str) or not s:
+        return s
+    out = s
+
+    # Generic key-based redaction: "key": "VALUE"
+    for k in _ID_KEYS:
+        out = re.sub(rf'("{k}"\s*:\s*")([^"]+)(")', rf'\1[redacted]\3', out)
+
+    # Also redact obvious ID-like tokens: batch_*, resp_*, msg_*, rs_*, file-*, etc.
+    out = re.sub(r'\b(?:batch|resp|msg|rs|file|ft|run|job)_[A-Za-z0-9\-\._]+\b', '[redacted]', out)
+
+    return out
+# --------------------------------------
 
 
 def clean_data_dir():
@@ -57,7 +86,7 @@ def _print_file_head(path: Path, lines: int = 60):
                 if i >= lines:
                     print("... (truncated)")
                     break
-                print(line.rstrip())
+                print(_redact_jsonlike_text(line.rstrip()))
             print("----- End file preview -----")
     except Exception as e:
         print(f"Could not preview file {path}: {e}")
@@ -75,7 +104,7 @@ def _inspect_output_jsonl(path: Path):
                     obj = json.loads(line)
                 except Exception as e:
                     print(f"[inspect] Line #{i} JSON error: {e}")
-                    print(f"[inspect] Line #{i} preview: {line[:200]}...")
+                    print(f"[inspect] Line #{i} preview: {_redact_jsonlike_text(line[:200])}...")
                     continue
 
                 rid = obj.get("id") or obj.get("custom_id")
@@ -98,7 +127,7 @@ def _inspect_output_jsonl(path: Path):
                             kinds.append(type(it).__name__)
 
                 print(
-                    f"[inspect] Line #{i}: id={rid}, status_code={status_code}, "
+                    f"[inspect] Line #{i}: id={_obf(rid)}, status_code={status_code}, "
                     f"has_output_text={has_output_text}, has_output_list={has_output_list}, "
                     f"error_present={bool(err)}, body.output.types={kinds}"
                 )
@@ -138,7 +167,7 @@ def run_topicmap_batch(chunks):
     save_topicmap_batch_input(preview, TOPIC_IN)
 
     batch_id = submit_batch(TOPIC_IN)
-    print(f"[TopicMap] Submitted batch id={batch_id}. Waiting for completion...")
+    print(f"[TopicMap] Submitted batch id={_obf(batch_id)}. Waiting for completion...")
 
     try:
         st = wait_for_batch(batch_id)
@@ -180,14 +209,21 @@ def run_topicmap_batch(chunks):
     topic_map = payloads[0]
     if not isinstance(topic_map, dict) or "units" not in topic_map:
         print("[TopicMap] Parsed payload lacks 'units'. Full parsed object follows:")
-        print(json.dumps(topic_map, ensure_ascii=False)[:1200] + ("..." if len(json.dumps(topic_map)) > 1200 else ""))
+        print(_redact_jsonlike_text(json.dumps(topic_map, ensure_ascii=False)[:1200]) + ("..." if len(json.dumps(topic_map)) > 1200 else ""))
         raise RuntimeError("Topic map payload is not a valid object with 'units'.")
 
-    # Enforce hard coverage constraint
+    # ---- Coverage check BEFORE saving, per request ----
     missing, overlaps = _audit_topicmap_coverage(topic_map, total_chunks=len(chunks))
     if missing or overlaps:
         print(f"[TopicMap] Coverage violation: missing={missing} overlaps={overlaps}")
         raise RuntimeError("Topic map violates coverage constraints (no gaps/no overlaps).")
+
+    (DATA / "topicmap.json").write_text(
+        json.dumps(topic_map, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+    print("[TopicMap] Saved parsed topic map → data/topicmap.json")
+    # ---------------------------------------------------
 
     print("[TopicMap] Parsed topic map successfully.")
     return topic_map
@@ -214,17 +250,28 @@ def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> List[
 def _extract_question_type(req):
     """
     Best-effort extractor that tolerates dict/list 'body' shapes without raising.
-    Returns a string like 'mcq'/'msq'/'tf' or None if not found.
+    Prefers parsing from custom_id (e.g., "..._mcq_01") for reliability, then
+    falls back to digging through the request body. Returns 'mcq'|'msq'|'tf' or None.
     """
     try:
+        # --- Fast path: infer from custom_id like "q_u1_topic_mcq_01"
+        cid = (req.get("custom_id") or "").lower()
+        for t in ("mcq", "msq", "tf"):
+            if f"_{t}_" in cid or cid.endswith(f"_{t}") or cid.startswith(f"{t}_"):
+                return t
+
+        # --- Fallbacks: inspect body shapes
         b = req.get("body")
+
         # Common case: body is a dict with 'input'
         if isinstance(b, dict):
             inp = b.get("input")
             if isinstance(inp, dict):
                 qt = inp.get("question_type")
                 if isinstance(qt, str):
-                    return qt
+                    qt = qt.lower().strip()
+                    return qt if qt in {"mcq","msq","tf"} else None
+
             # Sometimes the input is inside a messages-like array
             msgs = b.get("messages") or b.get("input_messages")
             if isinstance(msgs, list):
@@ -234,7 +281,9 @@ def _extract_question_type(req):
                         if isinstance(inp2, dict):
                             qt = inp2.get("question_type")
                             if isinstance(qt, str):
-                                return qt
+                                qt = qt.lower().strip()
+                                return qt if qt in {"mcq","msq","tf"} else None
+
         # Alternate case: body is a list of items, each may carry 'input'
         elif isinstance(b, list):
             for item in b:
@@ -243,15 +292,20 @@ def _extract_question_type(req):
                     if isinstance(inp, dict):
                         qt = inp.get("question_type")
                         if isinstance(qt, str):
-                            return qt
+                            qt = qt.lower().strip()
+                            return qt if qt in {"mcq","msq","tf"} else None
+
         # Fallback: occasionally 'input' may be top-level
         inp_top = req.get("input")
         if isinstance(inp_top, dict):
             qt = inp_top.get("question_type")
             if isinstance(qt, str):
-                return qt
+                qt = qt.lower().strip()
+                return qt if qt in {"mcq","msq","tf"} else None
+
     except Exception:
         pass
+
     return None
 
 
@@ -299,12 +353,13 @@ def run_questions_batch(topic_map, chunks):
         _assert_unique_custom_ids(shard)
 
         print(f"[Questions][Shard {si}/{len(shards)}] Writing {len(shard)} requests → {shard_in}")
+
         with shard_in.open("w", encoding="utf-8") as f:
             for line in shard:
                 f.write(json.dumps(line, ensure_ascii=False) + "\n")
 
         batch_id = submit_batch(shard_in)
-        print(f"[Questions][Shard {si}] Submitted batch id={batch_id}. Waiting for completion...")
+        print(f"[Questions][Shard {si}] Submitted batch id={_obf(batch_id)}. Waiting for completion...")
 
         try:
             st = wait_for_batch(batch_id)
@@ -357,6 +412,13 @@ def run_questions_batch(topic_map, chunks):
     write_final(fixed, FINAL)
     print(f"[Questions] Final questions: {len(fixed)} → {FINAL}")
 
+    # --- QA summary (Counter version) ---
+    from collections import Counter
+    print("[QA] By type:", dict(Counter(q["type"] for q in fixed)))
+    print("[QA] Units covered:", sorted({q["unit_id"] for q in fixed}))
+    print("[QA] Topics covered:", len({q["topic_id"] for q in fixed}), "of", sum(len(u["topics"]) for u in topic_map["units"]))
+    # ------------------------------------
+
     # Build taxonomy.json using topic_map + generated questions
     tax = build_taxonomy(topic_map, fixed)
     write_taxonomy(tax, TAXONOMY)
@@ -376,10 +438,10 @@ def _summarize_error_jsonl(err_path: Path, max_lines: int = 10):
                 obj = json.loads(line)
             except Exception:
                 continue
-            rid = obj.get("custom_id")
+            rid = _obf(obj.get("custom_id"))
             body = ((obj.get("response") or {}).get("body") or {})
             err = (body.get("error") or {})
-            msg = err.get("message") or ""
+            msg = _redact_jsonlike_text(err.get("message") or "")
             code = err.get("code") or ""
             param = err.get("param") or ""
             key = (code, param, msg)
@@ -415,7 +477,9 @@ if __name__ == "__main__":
 
     text = read_text(SOURCE)
     print(f"[Main] Loaded source text ({len(text)} chars). Chunking...")
-    chunks = char_chunks(text, MAX_CHARS, OVERLAP)
+    
+    from chunking import semantic_chunks
+    chunks = semantic_chunks(text, max_chars=MAX_CHARS, soft_min=max(OVERLAP, 600))
     print(f"[Main] Created {len(chunks)} chunk(s) (MAX_CHARS={MAX_CHARS}, OVERLAP={OVERLAP}).")
 
     topic_map = run_topicmap_batch(chunks)
