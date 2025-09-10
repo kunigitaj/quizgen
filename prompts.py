@@ -182,7 +182,6 @@ Requirements:
 - Fill EVERY field for the question (no empty lists).
 - Use “True” and “False” labels for TF choices.
 - Provide 2–3 hints in hints_rich (each a 'tip' callout). Do not provide fewer than 2 hints.
-- If the stem refers to “the prompt”, “the instructions”, “the guidelines/spec”, or “the context above”, include a short **Prompt (excerpt)** callout in the context that quotes the relevant instruction succinctly.
 - Output ONLY a JSON OBJECT for the single question (no array, no wrapper, no prose).
 
 Follow these structural anchors:

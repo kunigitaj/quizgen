@@ -10,24 +10,6 @@ from schema_models import Question, QuestionFile
 from config import MAX_CONTEXT_SCAN_LEN
 
 
-# ---------- Prompt mention detection (broad) ----------
-_PROMPT_REF_RE = re.compile(
-    r"""
-    (?:
-        (?:according\s+to|as\s+per|based\s+on|per|referring\s+to|with\s+respect\s+to|
-           in|from)\s+
-        (?:(?:the|this|that|above|below|following|previous|provided|given|attached|supplied|stated)\s+)?
-        (?:prompt|instruction(?:s)?|guideline(?:s)?|spec(?:ification)?s?|directions?|context)
-        \b
-    )
-    |
-    \bthe\s+(?:prompt|instruction(?:s)?|guideline(?:s)?|spec(?:ification)?s?|directions?|context)\s+
-      (?:above|below|provided|given|stated)\b
-    """,
-    re.IGNORECASE | re.VERBOSE,
-)
-
-
 def parse_batch_output(jsonl_path: Path) -> List[Any]:
     """
     Parse OpenAI Batch /v1/responses JSONL.
@@ -249,50 +231,6 @@ def _rich_to_plain_text(rich_list: List[Dict], max_chars: int = 1000) -> str:
     return (txt[:max_chars] + "…") if len(txt) > max_chars else txt
 
 
-def _build_prompt_excerpt_block(excerpt: str) -> Dict:
-    """Build a callout block to embed a short prompt/context excerpt."""
-    if not excerpt:
-        excerpt = "Prompt excerpt unavailable."
-    return {
-        "type": "callout",
-        "variant": "info",
-        "children": [
-            {
-                "type": "paragraph",
-                "children": [{"text": "Prompt (excerpt): " + excerpt}],
-            }
-        ],
-    }
-
-
-def _ensure_prompt_excerpt(item: Dict):
-    """
-    If stem references a 'prompt/instructions/spec/context', inject a concise
-    'Prompt (excerpt)' callout at the START of context_rich (once).
-    """
-    stem = " ".join(_gather_text(item.get("question_rich", [])))
-    if not stem or not _PROMPT_REF_RE.search(stem):
-        return
-
-    ctx = item.get("context_rich") or []
-    # Prevent duplicates
-    ctx_plain = _rich_to_plain_text(ctx, 3000).lower()
-    if "prompt (excerpt):" in ctx_plain:
-        return
-
-    # Use the first ~400 chars from existing context text as the "prompt" excerpt.
-    excerpt = _rich_to_plain_text(ctx, 600)
-    # Try to end excerpt at a sentence boundary
-    cut = max(excerpt.rfind(". "), excerpt.rfind("! "), excerpt.rfind("? "))
-    if cut > 200:
-        excerpt = excerpt[: cut + 1]
-    else:
-        excerpt = excerpt[:400]
-
-    callout = _build_prompt_excerpt_block(excerpt.strip())
-    item["context_rich"] = [callout] + ctx
-
-
 def context_leak_check(question: Dict) -> Tuple[bool, List[str]]:
     leaks: List[str] = []
     context_text = json.dumps(question.get("context_rich", ""))[:MAX_CONTEXT_SCAN_LEN].lower()
@@ -435,10 +373,7 @@ def validate_and_fix(items: List[Dict]) -> List[Dict]:
 
         it.setdefault("shuffle", True)
 
-        # Insert "Prompt (excerpt)" if the stem references prompt/spec/instructions/context
-        _ensure_prompt_excerpt(it)
-
-        # Then soften to prevent leaks (covers excerpt too)
+        # Then soften to prevent leaks (covers any accidental answer echoes)
         soften_context(it)
 
         # Normalize per-type constraints
