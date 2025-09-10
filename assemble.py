@@ -254,6 +254,37 @@ def soften_context(question: Dict):
     question["context_rich"] = json.loads(ctx_json)
 
 
+# -----------------------
+# Tag hygiene helpers
+# -----------------------
+_TAG_RE = re.compile(r"[^a-z0-9]+")
+
+def _slugify_tag(s: str) -> str:
+    """
+    snake_case: lowercase, non-alnum -> '_', collapse repeats, strip edges.
+    """
+    if not isinstance(s, str):
+        s = str(s or "")
+    s = s.strip().lower()
+    s = _TAG_RE.sub("_", s)
+    s = re.sub(r"_+", "_", s).strip("_")
+    return s
+
+def _normalize_tag_list(values) -> List[str]:
+    """
+    Normalize to snake_case and dedupe while preserving first occurrence order.
+    """
+    out = []
+    seen = set()
+    for v in (values or []):
+        t = _slugify_tag(v)
+        if t and t not in seen:
+            out.append(t)
+            seen.add(t)
+    return out
+# -----------------------
+
+
 def _normalize_choices_and_meta(item: Dict):
     """
     Normalize per spec:
@@ -375,6 +406,11 @@ def validate_and_fix(items: List[Dict]) -> List[Dict]:
     ensure_ids_unique(items)
 
     for it in items:
+        # --- Tag hygiene (snake_case + dedupe) ---
+        it["tags"] = _normalize_tag_list(it.get("tags"))
+        it["concept_tags"] = _normalize_tag_list(it.get("concept_tags"))
+        it["context_tags"] = _normalize_tag_list(it.get("context_tags"))
+
         if it.get("type") == "msq":
             it.setdefault(
                 "grading",
