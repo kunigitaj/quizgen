@@ -1,0 +1,53 @@
+{
+  "section": "Preparing the Modeling Environment (SAP HANA Cloud)",
+  "bullets": [
+    "Define SAP Business Application Studio (BAS) for HANA Cloud modeling",
+    "Create/configure a BAS development space",
+    "Create or import a modeling project into the workspace",
+    "Navigate BAS layout and modeling tools"
+  ],
+  "subsections": [
+    {
+      "title": "SAP Business Application Studio Overview",
+      "bullets": [
+        "Cloud IDE for SAP HANA native development",
+        "Uses dev spaces: isolated, preconfigured environments",
+        "Supports HDI, HDB artifacts, Git, CF integration"
+      ]
+    },
+    {
+      "title": "Working with Development Spaces",
+      "bullets": [
+        "Select SAP HANA Native Application space type",
+        "Start/stop and allocate resources",
+        "Ensure HANA tools and CF CLI extensions"
+      ]
+    },
+    {
+      "title": "Creating a New Project",
+      "bullets": [
+        "Use SAP HANA Database Project template",
+        "Set module names, namespace, HDI container",
+        "Bind to CF org/space and services if required"
+      ]
+    },
+    {
+      "title": "Importing an Existing Project",
+      "bullets": [
+        "Clone from Git or use Import Project",
+        "Open in workspace and install dependencies",
+        "Validate modules; build to verify"
+      ]
+    },
+    {
+      "title": "Navigating BAS",
+      "bullets": [
+        "Explorer, Editor, Terminal, Run/Debug views",
+        "SAP HANA Projects and Database Explorer",
+        "Command Palette, tasks, and Git controls"
+      ]
+    }
+  ],
+  "slides": [
+    {
+      "title": "BAS

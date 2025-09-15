@@ -1,0 +1,71 @@
+{
+  "section": "BAS Development Spaces",
+  "bullets": [
+    "Personal dev environments; not Cloud Foundry spaces",
+    "Select extensions at creation; include SAP HANA Calculation View Editor for HANA modeling",
+    "Must be RUNNING to work; start from landing page; auto-stops on idle",
+    "Landing page shows name, app kind, status, creation date, ID",
+    "Name/app kind immutable; add extensions only when stopped; cannot remove assigned ones",
+    "Export content as .tar.gz when running; import into an empty target space",
+    "Limits apply by subscription; Trial: max 2 spaces, only 1 running"
+  ],
+  "subsections": [
+    {
+      "title": "Managing",
+      "bullets": [
+        "Start from landing page; when running, name becomes link to enter",
+        "Spaces auto-stop after idle; verify status, especially if using bookmarked URLs"
+      ]
+    },
+    {
+      "title": "Limits",
+      "bullets": [
+        "Subscription may cap total/running spaces",
+        "Trial: up to 2 spaces; only 1 can run concurrently; stop one to swap"
+      ]
+    },
+    {
+      "title": "Maintenance",
+      "bullets": [
+        "Cannot rename or change app kind",
+        "Add optional extensions only when stopped; removal blocked to protect projects",
+        "Export requires running state; import guidance provided; target should be empty"
+      ]
+    },
+    {
+      "title": "HANA Modeling Setup",
+      "bullets": [
+        "Include SAP HANA Calculation View Editor extension"
+      ]
+    }
+  ],
+  "slides": [
+    {
+      "title": "BAS Development Spaces: Manage & Maintain",
+      "subheadings": [
+        {
+          "heading": "Setup",
+          "color": "blue.600",
+          "content": [
+            "Personal spaces; not CF spaces",
+            "Choose extensions; add HANA Calculation View Editor for HANA modeling"
+          ]
+        },
+        {
+          "heading": "Managing",
+          "color": "blue.600",
+          "content": [
+            "Start from landing page; status must be RUNNING",
+            "Auto-stop on idle; check status/bookmarked links"
+          ]
+        },
+        {
+          "heading": "Limits",
+          "color": "blue.600",
+          "content": [
+            "Subscription caps spaces and concurrent runs",
+            "Trial: 2 spaces max; 1 running at a time"
+          ]
+        },
+        {
+          "heading": "

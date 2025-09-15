@@ -1,0 +1,22 @@
+{
+  "section": "SAP Business Application Studio (BAS) Overview",
+  "bullets": [
+    "Web-based IDE on SAP BTP for full-stack (UI, app, DB)",
+    "Supports cloud, on-prem, hybrid; integrates SAP and non-SAP",
+    "Based on VS Code; extensible via SAP/3rd-party plug-ins",
+    "Text/graphical editors + CLI; native Git",
+    "Recommended for SAP HANA Cloud data modeling; Web IDE deprecated"
+  ],
+  "subsections": [
+    {
+      "title": "Access & Subscription",
+      "bullets": [
+        "Subscribe to BAS at BTP subaccount via Cockpit",
+        "Complete account/subaccount setup and user authorizations",
+        "Launch BAS in browser after setup"
+      ]
+    },
+    {
+      "title": "Development Spaces",
+      "bullets": [
+        "Create a Development

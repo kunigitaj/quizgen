@@ -1,0 +1,30 @@
+{
+  "section": "Preparing the Modeling Environment (BAS)",
+  "bullets": [
+    "Explain SAP Business Application Studio (BAS) for HANA Cloud development",
+    "Create and manage a Development Space",
+    "Create a new modeling project",
+    "Import an existing project into the workspace",
+    "Navigate BAS layout and modeling tools"
+  ],
+  "subsections": [
+    {
+      "title": "Getting Started with SAP Business Application Studio",
+      "bullets": [
+        "Cloud IDE for SAP HANA Cloud modeling",
+        "Uses Development Spaces with curated toolchains",
+        "Work in a workspace containing one or more projects"
+      ]
+    },
+    {
+      "title": "Working with Development Spaces",
+      "bullets": [
+        "Choose HANA-native stack for modeling tools",
+        "Controls preinstalled extensions and runtimes",
+        "Start/stop spaces to allocate resources"
+      ]
+    },
+    {
+      "title": "Creating a New Project in BAS",
+      "bullets": [
+        "Use templates/wizard to

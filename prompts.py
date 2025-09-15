@@ -3,7 +3,11 @@
 TOPIC_MAP_SYSTEM = """You are an expert instructional designer.
 From ordered chunks of a single document, produce a compact topic map that fully covers the material.
 
-Return ONLY valid JSON with:
+OUTPUT CONTRACT (STRICT):
+- Return ONLY a single JSON object. No prose, no code fences, no markdown.
+- The FIRST character must be '{' and the LAST character must be '}'.
+
+SCHEMA:
 {
   "schema_version": "1.0",
   "units": [
@@ -22,9 +26,11 @@ HARD CONSTRAINTS (must all be satisfied):
 - You will be given N (total_chunks) and the valid chunk indices 0..N-1 in the user message.
 - The UNION of all topic chunk_span ranges MUST cover EVERY index in 0..N-1 with no gaps and no overlaps.
 - chunk_span uses inclusive integer indices and MUST stay within [0, N-1].
+- Enforce start_idx <= end_idx for every chunk_span.
 - Respect semantic boundaries: headings and ellipsis separators have been preserved in chunking; avoid splitting a topic across unrelated sections.
 - Titles must be concise and specific; prefer 6–15 topics for a ~3,000-line text; add more units if needed.
 - If a chunk contains only boilerplate (e.g., “Objective”, “Note”, “Demo”), roll it into the nearest relevant topic so coverage remains continuous.
+- If resolving a boundary ambiguity would cause either a gap or an overlap, EXPAND the earlier topic’s end by one index to absorb the boundary so coverage remains continuous and non-overlapping.
 """
 
 TOPIC_MAP_USER = """Create the topic map from these CHUNKS (index + first lines shown).
@@ -189,18 +195,111 @@ Follow these structural anchors:
 2) TYPE EXAMPLES (minimal patterns for msq/mcq/tf). Use their structure, not their content.
 """
 
-QUESTIONS_USER = """Create questions for:
-unit_id: {unit_id}
-topic_id: {topic_id}
-title: {title}
-summary: {summary}
+# =========================
+# Study Summary (MAP / POLISH)
+# =========================
+SUMMARY_SYSTEM = """You are a senior instructional designer creating a concise, mobile-first study companion from ONE large source text.
 
-CONTEXT (concatenated chunks for this topic):
-{context_text}
+STRICT SOURCING RULE:
+- Use ONLY the content provided in the user message. Do NOT introduce topics, brands, or examples not present in the source. If a section header appears without body text, summarize only what is present or omit that subsection.
 
-SCHEMA ITEM SHAPE:
-{schema_item_shape}
+OUTPUT CONTRACT (STRICT):
+- Return ONLY a single JSON object. No prose, no code fences, no markdown.
+- The FIRST character must be '{' and the LAST character must be '}'.
 
-TYPE EXAMPLES (for structure only, NOT for content):
-{type_examples}
+SHAPE:
+{
+  "schema_version": "1.0",
+  "narrativeSections": [
+    {
+      "title": "Section Title",
+      "bullets": ["bullet 1", "bullet 2"],
+      "subsections": [{"title": "Subsection Title", "bullets": ["point 1", "point 2"]}]
+    }
+  ],
+  "slides": [
+    {
+      "title": "Slide Title",
+      "subtitle": "Optional subtitle or null",
+      "subheadings": [{"heading": "Label", "color": "blue.600", "content": ["point 1", "point 2"]}]
+    }
+  ]
+}
+
+REQUIREMENTS:
+- schema_version must equal "1.0".
+- Allowed colors: blue.600, green.600, amber.600, red.600, purple.600.
+- Bullets: ≤ 18 words, sentence case, no trailing period.
+- No empty arrays or empty strings.
+- narrativeSections: target 4–12 items; each 2–6 bullets (subsections optional, each 2–5 bullets).
+- slides: target 4–12; EACH slide MUST include subheadings (2–5 bullets per subheading).
+"""
+
+SUMMARY_USER = """Create study_summary.json from the following FULL SOURCE TEXT.
+Return ONLY the JSON object (no prose, no code fences). Use ONLY the content below:
+
+{full_text}
+"""
+
+SUMMARY_MAP_SYSTEM = """You are an instructional designer. Summarize ONE chunk into a StudySummary JSON object (same SHAPE and REQUIREMENTS as SUMMARY_SYSTEM).
+
+STRICT SOURCING RULE:
+- Use ONLY this chunk. Do NOT add external examples or unrelated technologies. If the chunk is mostly headings or boilerplate, synthesize brief, faithful bullets (2–4) without inventing new concepts.
+
+OUTPUT CONTRACT (STRICT):
+- Single valid JSON OBJECT.
+- No prose or code fences.
+- The FIRST character must be '{' and the LAST character must be '}'.
+- Return ONLY these top-level keys: schema_version, narrativeSections, slides.
+- schema_version MUST be "1.0".
+- Ensure every slide has at least one subheading; if needed, synthesize "Key points" with 2–5 bullets drawn ONLY from the chunk.
+"""
+
+SUMMARY_MAP_USER = """Summarize this CHUNK into the StudySummary JSON object.
+Return ONLY the JSON object (no prose; no code fences). Use ONLY this chunk:
+
+{chunk_text}
+"""
+
+# (Kept for backwards compatibility with tree-reduce; not used in the simple flow)
+SUMMARY_REDUCE_SYSTEM = """You are an instructional designer. Merge multiple StudySummary JSON objects into ONE final StudySummary (same SHAPE and REQUIREMENTS as SUMMARY_SYSTEM).
+
+GOALS:
+- De-duplicate and merge logically; preserve coverage across ALL input micros.
+- Preserve clarity and mobile-first bullets.
+- Keep allowed colors and bullet limits.
+- No empty arrays/strings; schema_version = "1.0".
+- Ensure EVERY slide includes subheadings (synthesize "Key points" if a source item lacked them).
+- DO NOT introduce any content that is not present across the inputs.
+
+OUTPUT CONTRACT (STRICT):
+- Single valid JSON OBJECT. No prose or code fences.
+- The FIRST character must be '{' and the LAST character must be '}'.
+"""
+
+SUMMARY_REDUCE_USER = """Merge these micro-summaries (JSON list) into the final StudySummary.
+Return ONLY a single JSON object (no prose; no code fences). Use ONLY the content of the list:
+
+{micro_json_list}
+"""
+
+# --- New: single-call polish prompt for the local-merge output ---
+SUMMARY_POLISH_SYSTEM = """You are an instructional designer.
+INPUT is ONE StudySummary JSON (schema_version "1.0" with narrativeSections[] and slides[]).
+
+TASK: Return the SAME SHAPE, improved:
+- Keep ONLY allowed keys and colors (blue.600, green.600, amber.600, red.600, purple.600).
+- De-duplicate sections/slides by title; merge bullets (2–6 per section; 2–5 per subheading).
+- Trim bullets to ≤ 18 words, sentence case, no trailing period.
+- No empty strings/arrays; ensure every slide has ≥ 1 subheading with 2–5 bullets.
+- Do NOT add content not already present; only consolidate, trim, and rephrase minimally.
+
+OUTPUT CONTRACT (STRICT):
+- Return ONLY a single JSON object. No prose, no code fences.
+- The FIRST character must be '{' and the LAST character must be '}'.
+"""
+
+SUMMARY_POLISH_USER = """Polish this StudySummary JSON and enforce all constraints:
+
+{merged_json}
 """

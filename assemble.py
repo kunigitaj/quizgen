@@ -225,12 +225,6 @@ def _gather_text(rich_list):
     return out
 
 
-def _rich_to_plain_text(rich_list: List[Dict], max_chars: int = 1000) -> str:
-    """Flatten a rich block list to plaintext (soft cap length)."""
-    txt = " ".join(_gather_text(rich_list)).strip()
-    return (txt[:max_chars] + "…") if len(txt) > max_chars else txt
-
-
 def context_leak_check(question: Dict) -> Tuple[bool, List[str]]:
     leaks: List[str] = []
     context_text = json.dumps(question.get("context_rich", ""))[:MAX_CONTEXT_SCAN_LEN].lower()

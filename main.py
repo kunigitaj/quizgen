@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import argparse
 import re
+from typing import List
 
 from chunking import read_text, chunk_preview
 from topic_map import save_topicmap_batch_input
@@ -17,8 +18,9 @@ from config import (
     BATCH_QUESTIONS_SHARD_SIZE,
     BATCH_QUESTIONS_MAX_BYTES,
     CANCEL_ON_TIMEOUT,   # used for Ctrl-C behavior
+    SUMMARY_REDUCE_FANIN,
 )
-from typing import List
+from summary import summarize_chunks_batch, merge_summaries_batch_tree, write_summary
 
 DATA = Path("data")
 DATA.mkdir(parents=True, exist_ok=True)
@@ -29,7 +31,7 @@ TOPIC_OUT = DATA / "topicmap_output.jsonl"
 Q_OUT = DATA / "questions_output.jsonl"
 FINAL = DATA / "questions_final.json"
 TAXONOMY = DATA / "taxonomy.json"
-
+STUDY_SUMMARY = DATA / "study_summary.json"
 
 # ---------- Redaction helpers ----------
 _ID_KEYS = ("id", "request_id", "output_file_id", "error_file_id", "custom_id")
@@ -47,17 +49,13 @@ def _redact_jsonlike_text(s: str) -> str:
     if not isinstance(s, str) or not s:
         return s
     out = s
-
     # Generic key-based redaction: "key": "VALUE"
     for k in _ID_KEYS:
         out = re.sub(rf'("{k}"\s*:\s*")([^"]+)(")', rf'\1[redacted]\3', out)
-
     # Also redact obvious ID-like tokens: batch_*, resp_*, msg_*, rs_*, file-*, etc.
     out = re.sub(r'\b(?:batch|resp|msg|rs|file|ft|run|job)_[A-Za-z0-9\-\._]+\b', '[redacted]', out)
-
     return out
 # --------------------------------------
-
 
 def clean_data_dir():
     kept = {"source.txt", ".gitkeep", ".DS_Store"}
@@ -77,7 +75,6 @@ def clean_data_dir():
             print(f"[Cleanup] Could not remove {f}: {e}")
     print(f"[Cleanup] Removed {removed} item(s).")
 
-
 def _print_file_head(path: Path, lines: int = 60):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -90,7 +87,6 @@ def _print_file_head(path: Path, lines: int = 60):
             print("----- End file preview -----")
     except Exception as e:
         print(f"Could not preview file {path}: {e}")
-
 
 def _inspect_output_jsonl(path: Path):
     if not path.exists():
@@ -127,13 +123,12 @@ def _inspect_output_jsonl(path: Path):
                             kinds.append(type(it).__name__)
 
                 print(
-                    f"[inspect] Line #{i}: id={_obf(rid)}, status_code={status_code}, "
+                    f"[inspect] Line #{i}: id={_obf(str(rid))}, status_code={status_code}, "
                     f"has_output_text={has_output_text}, has_output_list={has_output_list}, "
                     f"error_present={bool(err)}, body.output.types={kinds}"
                 )
     except Exception as e:
         print(f"[inspect] Failed to inspect {path}: {e}")
-
 
 def _audit_topicmap_coverage(topic_map: dict, total_chunks: int):
     """Return (missing_indices, overlap_indices)."""
@@ -147,7 +142,6 @@ def _audit_topicmap_coverage(topic_map: dict, total_chunks: int):
     overlaps = [i for i, c in seen_counts.items() if c > 1]
     return missing, overlaps
 
-
 # -------- Optional guardrail: ensure each shard has unique custom_ids --------
 def _assert_unique_custom_ids(batch_requests: list):
     seen = {}
@@ -159,7 +153,6 @@ def _assert_unique_custom_ids(batch_requests: list):
             raise ValueError(f"Duplicate custom_id '{cid}' between requests #{seen[cid]} and #{i}")
         seen[cid] = i
 # -----------------------------------------------------------------------------
-
 
 def run_topicmap_batch(chunks):
     preview = chunk_preview(chunks)  # uses first lines per chunk (good for indexing + titles)
@@ -209,7 +202,8 @@ def run_topicmap_batch(chunks):
     topic_map = payloads[0]
     if not isinstance(topic_map, dict) or "units" not in topic_map:
         print("[TopicMap] Parsed payload lacks 'units'. Full parsed object follows:")
-        print(_redact_jsonlike_text(json.dumps(topic_map, ensure_ascii=False)[:1200]) + ("..." if len(json.dumps(topic_map)) > 1200 else ""))
+        j = json.dumps(topic_map, ensure_ascii=False)
+        print(_redact_jsonlike_text(j[:1200]) + ("..." if len(j) > 1200 else ""))
         raise RuntimeError("Topic map payload is not a valid object with 'units'.")
 
     # ---- Coverage check BEFORE saving, per request ----
@@ -228,7 +222,6 @@ def run_topicmap_batch(chunks):
     print("[TopicMap] Parsed topic map successfully.")
     return topic_map
 
-
 def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> List[List[dict]]:
     if max_per_shard <= 0:
         return [requests]
@@ -245,7 +238,6 @@ def _shard_requests(requests: list, max_per_shard: int, max_bytes: int) -> List[
     if cur:
         shards.append(cur)
     return shards
-
 
 def _extract_question_type(req):
     """
@@ -308,7 +300,6 @@ def _extract_question_type(req):
 
     return None
 
-
 def run_questions_batch(topic_map, chunks):
     # Plan all requests (not written as a single giant JSONL anymore)
     reqs = build_questions_requests_balanced(topic_map, chunks)
@@ -319,8 +310,6 @@ def run_questions_batch(topic_map, chunks):
     qtypes = [qt for qt in (_extract_question_type(r) for r in reqs) if qt]
     mix = Counter(qtypes)
     unknown = len(reqs) - len(qtypes)
-
-    # Pretty-print sorted mix
     print(f"[Questions] Planned by type: {dict(sorted(mix.items()))}  (total={len(reqs)}, unknown_shapes={unknown})")
 
     # Sanity check: topic count
@@ -328,13 +317,11 @@ def run_questions_batch(topic_map, chunks):
     print(f"[Questions] Topics detected: {expected_per_topic}")
 
     from config import QUESTION_TYPES_PER_TOPIC, QUESTION_TYPE_MULTIPLIER
-
     expected_total = expected_per_topic * len(QUESTION_TYPES_PER_TOPIC) * QUESTION_TYPE_MULTIPLIER
     print(f"[Questions] Expected requests (topics × types × multiplier): "
-        f"{expected_per_topic} × {len(QUESTION_TYPES_PER_TOPIC)} × {QUESTION_TYPE_MULTIPLIER} = {expected_total}")
+          f"{expected_per_topic} × {len(QUESTION_TYPES_PER_TOPIC)} × {QUESTION_TYPE_MULTIPLIER} = {expected_total}")
     if expected_total != len(reqs):
         print(f"[Questions][warn] Planned count {len(reqs)} ≠ expected {expected_total}")
-    # -------------------------------------
 
     shards = _shard_requests(reqs, BATCH_QUESTIONS_SHARD_SIZE, BATCH_QUESTIONS_MAX_BYTES)
     print(f"[Questions] Submitting in {len(shards)} shard(s) "
@@ -344,6 +331,9 @@ def run_questions_batch(topic_map, chunks):
     if Q_OUT.exists():
         Q_OUT.unlink()
     Q_OUT.touch()
+
+    total = len(reqs)
+    parsed_total = 0
 
     for si, shard in enumerate(shards, start=1):
         shard_in = DATA / f"questions_input.shard{si:02d}.jsonl"
@@ -395,9 +385,15 @@ def run_questions_batch(topic_map, chunks):
         _inspect_output_jsonl(path)
 
         # Append shard outputs to combined Q_OUT
+        parsed_shard = 0
         with Q_OUT.open("a", encoding="utf-8") as outf, shard_out.open("r", encoding="utf-8") as inf:
             for line in inf:
                 outf.write(line)
+                parsed_shard += 1
+
+        parsed_total += parsed_shard
+        pct = (parsed_total / total * 100.0) if total else 100.0
+        print(f"[Questions][Shard {si}] Accumulated parsed: {parsed_total}/{total} ({pct:.1f}%)")
 
     print(f"[Questions] All shards completed. Combined output → {Q_OUT}")
 
@@ -424,7 +420,6 @@ def run_questions_batch(topic_map, chunks):
     write_taxonomy(tax, TAXONOMY)
     print(f"[Taxonomy] Wrote taxonomy → {TAXONOMY}")
 
-
 def _summarize_error_jsonl(err_path: Path, max_lines: int = 10):
     if not err_path.exists():
         print(f"[errors] (no file) {err_path}")
@@ -438,7 +433,7 @@ def _summarize_error_jsonl(err_path: Path, max_lines: int = 10):
                 obj = json.loads(line)
             except Exception:
                 continue
-            rid = _obf(obj.get("custom_id"))
+            rid = _obf(str(obj.get("custom_id")))
             body = ((obj.get("response") or {}).get("body") or {})
             err = (body.get("error") or {})
             msg = _redact_jsonlike_text(err.get("message") or "")
@@ -477,10 +472,20 @@ if __name__ == "__main__":
 
     text = read_text(SOURCE)
     print(f"[Main] Loaded source text ({len(text)} chars). Chunking...")
-    
+
+    # --- Summary: MAP → TREE REDUCE (all batch) --------------------------
     from chunking import semantic_chunks
     chunks = semantic_chunks(text, max_chars=MAX_CHARS, soft_min=max(OVERLAP, 600))
-    print(f"[Main] Created {len(chunks)} chunk(s) (MAX_CHARS={MAX_CHARS}, OVERLAP={OVERLAP}).")
+    print(f"[Summary] Map phase: summarizing {len(chunks)} chunk(s) via batch...")
+    micro_summaries = summarize_chunks_batch(chunks)
+
+    print(f"[Summary] Reduce phase (tree): fanin={SUMMARY_REDUCE_FANIN} via batch...")
+    summary_dict = merge_summaries_batch_tree(micro_summaries, fanin=SUMMARY_REDUCE_FANIN)
+    ok, msg = write_summary(summary_dict, STUDY_SUMMARY)
+    print(f"[Summary] {msg}")
+    if not ok:
+        print("[Summary][warn] Study summary failed validation; continuing with topic map + questions.")
+    # --------------------------------------------------------------------
 
     topic_map = run_topicmap_batch(chunks)
     run_questions_batch(topic_map, chunks)

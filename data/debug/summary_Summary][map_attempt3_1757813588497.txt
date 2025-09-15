@@ -1,0 +1,72 @@
+{
+  "section": "SAP Business Application Studio (BAS) Overview",
+  "bullets": [
+    "Web-based IDE on SAP BTP for full-stack (UI, app, DB)",
+    "Supports SAP/non-SAP; cloud, on-prem, hybrid",
+    "Based on VS Code; extensible via SAP/3rd‑party plug-ins",
+    "Text & graphical editors plus CLI",
+    "Native Git version control",
+    "Recommended for SAP HANA Cloud data modeling"
+  ],
+  "subsections": [
+    {
+      "title": "Access & Setup",
+      "bullets": [
+        "Subscribe to BAS at BTP sub-account (Cockpit)",
+        "Configure account/subaccount; assign user roles/authorizations",
+        "Launch BAS in browser after setup"
+      ]
+    },
+    {
+      "title": "Development Spaces",
+      "bullets": [
+        "Create a dev space to host HANA modeling content"
+      ]
+    }
+  ],
+  "slides": [
+    {
+      "title": "BAS Essentials",
+      "subheadings": [
+        {
+          "heading": "What it is",
+          "color": "blue.600",
+          "content": [
+            "Web IDE on SAP BTP for full-stack development",
+            "Integrates SAP and non-SAP technologies"
+          ]
+        },
+        {
+          "heading": "Foundations",
+          "color": "blue.600",
+          "content": [
+            "Based on Visual Studio Code",
+            "Extensible via SAP/third‑party plug-ins"
+          ]
+        },
+        {
+          "heading": "Core features",
+          "color": "blue.600",
+          "content": [
+            "Text & graphical editors; CLI",
+            "Embedded Git controls"
+          ]
+        },
+        {
+          "heading": "Why BAS (vs Web IDE)",
+          "color": "blue.600",
+          "content": [
+            "Web IDE not recommended; no new features",
+            "BAS is the supported, feature-rich choice"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Access & Spaces",
+      "subheadings": [
+        {
+          "heading": "Access steps",
+          "color": "blue.600",
+          "content": [
+            "

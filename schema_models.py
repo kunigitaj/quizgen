@@ -85,3 +85,51 @@ class Taxonomy(BaseModel):
     tags: List[TaxonomyTagEntry]
     concept_tags: List[TaxonomyTagEntry]
     context_tags: List[TaxonomyTagEntry]
+
+# --------------------------
+# Study Summary schema
+# --------------------------
+class SlideSubheading(BaseModel):
+    heading: str
+    color: str  # e.g., "blue.600", "red.500", "gray.700"
+    content: List[str]  # clean, concise bullet points
+
+class Slide(BaseModel):
+    title: str
+    subtitle: Optional[str] = None
+    subheadings: List[SlideSubheading]
+
+class Subsection(BaseModel):
+    title: str
+    bullets: List[str]
+
+class NarrativeSection(BaseModel):
+    title: str
+    bullets: List[str] = []
+    subsections: Optional[List[Subsection]] = None
+
+class StudySummary(BaseModel):
+    schema_version: Literal["1.0"]
+    narrativeSections: List[NarrativeSection]
+    slides: List[Slide]
+
+    @model_validator(mode="after")
+    def _non_empty_rules(self):
+        assert self.narrativeSections, "narrativeSections must not be empty"
+        assert self.slides, "slides must not be empty"
+        # Mobile-first hygiene: keep bullets tight
+        for sec in self.narrativeSections:
+            for b in sec.bullets:
+                assert isinstance(b, str) and b.strip(), "Empty bullet in narrativeSections"
+            if sec.subsections:
+                for s in sec.subsections:
+                    for b in s.bullets:
+                        assert isinstance(b, str) and b.strip(), "Empty bullet in narrativeSections.subsections"
+        for sl in self.slides:
+            assert isinstance(sl.title, str) and sl.title.strip(), "Slide title required"
+            assert sl.subheadings, "Each slide needs at least one subheading"
+            for sh in sl.subheadings:
+                assert isinstance(sh.heading, str) and sh.heading.strip(), "Subheading heading required"
+                assert isinstance(sh.color, str) and sh.color.strip(), "Subheading color required"
+                assert sh.content and all(isinstance(b, str) and b.strip() for b in sh.content), "Subheading content bullets required"
+        return self
